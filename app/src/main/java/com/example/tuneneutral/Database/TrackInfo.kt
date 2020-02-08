@@ -1,4 +1,4 @@
-package com.example.tuneneutral
+package com.example.tuneneutral.Database
 
 import org.json.JSONObject
 

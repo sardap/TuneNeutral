@@ -5,6 +5,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.tuneneutral.Database.DatabaseManager
+import com.example.tuneneutral.Database.TrackInfo
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -239,7 +240,10 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
 
         if(response.isSuccessful) {
             try {
-                result = TrackInfo(id, JSONObject(response.body!!.string()))
+                result = TrackInfo(
+                    id,
+                    JSONObject(response.body!!.string())
+                )
                 DatabaseManager.instance.addTrackInfo(result)
                 Log.d("Status: ", "Got new analysis: $result")
             } catch (e: JSONException) {

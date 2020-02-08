@@ -2,10 +2,8 @@ package com.example.tuneneutral.Database
 
 import android.content.Context
 import android.util.Log
-import com.example.tuneneutral.TrackInfo
 import org.json.JSONObject
 import java.io.*
-import java.io.File.separator
 
 
 class DatabaseManager private constructor() {
@@ -42,7 +40,10 @@ class DatabaseManager private constructor() {
 
         for (i in 0..tracks.length()) {
             if((tracks[i] as JSONObject).getString("id") == trackId) {
-                return TrackInfo(trackId, (tracks[i] as JSONObject))
+                return TrackInfo(
+                    trackId,
+                    (tracks[i] as JSONObject)
+                )
             }
         }
 
