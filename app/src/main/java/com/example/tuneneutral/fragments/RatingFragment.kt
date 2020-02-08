@@ -1,4 +1,4 @@
-package com.example.tuneneutral
+package com.example.tuneneutral.fragments
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -13,6 +13,7 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
 
 
@@ -26,7 +27,8 @@ class RatingFragment : Fragment() {
         WaitingInput, GenPlaylist
     }
 
-    private var mState = State.WaitingInput
+    private var mState =
+        State.WaitingInput
 
     private lateinit var viewModel: RatingViewModel
     private lateinit var mReceiver: MyReceiver
@@ -69,7 +71,8 @@ class RatingFragment : Fragment() {
     }
 
     override fun onResume() {
-        mReceiver = MyReceiver(this)
+        mReceiver =
+            MyReceiver(this)
         LocalBroadcastManager.getInstance(context!!).registerReceiver(mReceiver, IntentFilter(NEUTRALISE_PLAYLIST_MESSAGE))
         super.onResume()
     }
@@ -96,7 +99,12 @@ class RatingFragment : Fragment() {
 
             val currentValence = mRatingSeekBar.progress / 100f
 
-            val generateNeutralised = GenrateNeutralisedPlaylist(SpotifyUserInfo.SpotifyUserInfo!!, currentValence, context!!)
+            val generateNeutralised =
+                GenrateNeutralisedPlaylist(
+                    SpotifyUserInfo.SpotifyUserInfo!!,
+                    currentValence,
+                    context!!
+                )
 
             val neutraliseThread = Thread(generateNeutralised)
 
