@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +18,7 @@ import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.DateInfo
+import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import java.util.*
 
 
@@ -26,12 +28,20 @@ class RatingFragment : Fragment() {
         fun newInstance() = RatingFragment()
     }
 
-    private enum class State {
-        WaitingInput, GenPlaylist
+    enum class Action {
+        Complete
     }
 
-    private var mState =
-        State.WaitingInput
+    interface OnFragmentInteractionListener {
+        fun onFragmentInteraction(action: Action)
+    }
+
+    private enum class State {
+        WaitingInput, GenPlaylist, Complete
+    }
+
+    private var mState = State.WaitingInput
+    private var listener: OnFragmentInteractionListener? = null
 
     private lateinit var viewModel: RatingViewModel
     private lateinit var mReceiver: MyReceiver
@@ -39,6 +49,23 @@ class RatingFragment : Fragment() {
     private lateinit var mRatingSeekBar: SeekBar
     private lateinit var mRatingText: TextView
     private lateinit var mNeutralisedButton: Button
+
+    private val seekBarChangeListener: OnSeekBarChangeListener = object : OnSeekBarChangeListener {
+        override fun onProgressChanged(
+            seekBar: SeekBar,
+            progress: Int,
+            fromUser: Boolean
+        ) { // updated continuously as the user slides the thumb
+            updateProgressText()
+        }
+
+        override fun onStartTrackingTouch(seekBar: SeekBar) { // called when the user first touches the SeekBar
+
+        }
+
+        override fun onStopTrackingTouch(seekBar: SeekBar) { // called after the user finishes moving the SeekBar
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -80,11 +107,23 @@ class RatingFragment : Fragment() {
         super.onResume()
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is OnFragmentInteractionListener) {
+            listener = context
+        } else {
+            throw RuntimeException("$context must implement OnFragmentInteractionListener")
+        }
+    }
+
+
     private fun changeState(newState: State) {
         if(newState == State.WaitingInput) {
             mNeutralisedButton.visibility = View.VISIBLE
         } else if(newState == State.GenPlaylist) {
             mNeutralisedButton.visibility = View.GONE
+        } else if (newState == State.Complete) {
+            listener?.onFragmentInteraction(Action.Complete)
         }
 
         mState = newState
@@ -143,7 +182,8 @@ class RatingFragment : Fragment() {
                         )
                     )
                 }
-                ratingFragment.changeState(State.WaitingInput)
+
+                ratingFragment.changeState(State.Complete)
             }
 
             if (message == NeutralisePlaylistMessage.CompleteNoPlaylist) {
@@ -155,24 +195,8 @@ class RatingFragment : Fragment() {
                     )
                 )
 
-                ratingFragment.changeState(State.WaitingInput)
+                ratingFragment.changeState(State.Complete)
             }
-        }
-    }
-
-    var seekBarChangeListener: OnSeekBarChangeListener = object : OnSeekBarChangeListener {
-        override fun onProgressChanged(
-            seekBar: SeekBar,
-            progress: Int,
-            fromUser: Boolean
-        ) { // updated continuously as the user slides the thumb
-            updateProgressText()
-        }
-
-        override fun onStartTrackingTouch(seekBar: SeekBar) { // called when the user first touches the SeekBar
-        }
-
-        override fun onStopTrackingTouch(seekBar: SeekBar) { // called after the user finishes moving the SeekBar
         }
     }
 }

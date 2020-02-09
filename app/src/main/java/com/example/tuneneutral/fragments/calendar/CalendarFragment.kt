@@ -1,5 +1,6 @@
 package com.example.tuneneutral.fragments.calendar
 
+import android.content.ComponentCallbacks
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,8 +14,11 @@ import androidx.recyclerview.widget.RecyclerView
 
 import com.example.tuneneutral.R
 import com.example.tuneneutral.SpotifyUtiltiy
+import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.DateInfo
+import java.util.*
+import kotlin.collections.ArrayList
 
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_DATE = "ARG_DATE"
@@ -47,13 +51,24 @@ class CalendarFragment : Fragment() {
         super.onStart()
 
         mDates = DatabaseManager.instance.getDates()
+        mDates.reverse()
+        mDates.add(0, DateInfo(Calendar.getInstance().timeInMillis, -1, ""))
 
         mRecyclerView = view!!.findViewById(R.id.date_list)
-        mViewAdapter = CalendarListAdatper(mDates, object : CalendarListAdatper.OnItemClickListener{
-            override fun onItemClick(pos: Int) {
-                SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, mDates[pos].playlistID)
+        mViewAdapter = CalendarListAdatper(mDates,
+            object : CalendarListAdatper.OnItemClickListener{
+                override fun onItemClick(pos: Int) {
+                    SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, mDates[pos].playlistID)
+                }
+            },
+            object : CalendarListAdatper.OnItemClickListener {
+                override fun onItemClick(pos: Int) {
+                    if(listener != null) {
+                        listener?.onFragmentInteraction(Uris.OPEN_RATING_FRAGMENT)
+                    }
+                }
             }
-        } )
+        )
         mViewManager = LinearLayoutManager(activity)
 
         mRecyclerView.apply {
@@ -70,11 +85,6 @@ class CalendarFragment : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_calendar, container, false)
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    fun onButtonPressed(uri: Uri) {
-        listener?.onFragmentInteraction(uri)
     }
 
     override fun onAttach(context: Context) {

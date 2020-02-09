@@ -12,32 +12,50 @@ import java.text.DateFormat
 import java.util.*
 
 
-class CalendarListAdatper(private val mDataSet: ArrayList<DateInfo>, private val mOnItemClick: OnItemClickListener) : RecyclerView.Adapter<CalendarListAdatper.ViewHolder>() {
+class CalendarListAdatper(private val mDataSet: ArrayList<DateInfo>, private val mPlaylist: OnItemClickListener, private val mNewEntry: OnItemClickListener) : RecyclerView.Adapter<CalendarListAdatper.ViewHolder>() {
 
-    public interface OnItemClickListener {
+    interface OnItemClickListener {
         fun onItemClick(pos: Int)
     }
 
     private object ViewTypes {
         const val COMEPLETE = 0
         const val NO_PLAYLIST = 1
+        const val TODAY = 2
     }
 
-    open class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    // This seems crazy but fuck it
+    interface RatingSubtitle {
+        val ratingTextView: TextView
+    }
+
+    abstract class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val titleTextView: TextView = view.findViewById(R.id.title)
-        val ratingTextView: TextView = view.findViewById(R.id.rating_text)
     }
 
-    class DateViewHolderComplete(view: View) : ViewHolder(view) {
+    class DateViewTodayHolder(view: View) : ViewHolder(view) {
+        val createNewEntryButton: Button = view.findViewById(R.id.button_rate_today)
+    }
+
+    class DateViewHolderNoPlaylist(view: View) : ViewHolder(view), RatingSubtitle {
+        override val ratingTextView: TextView = view.findViewById(R.id.rating_text)
+    }
+
+    class DateViewHolderComplete(view: View) : ViewHolder(view), RatingSubtitle {
         val viewPlaylistButton: Button = view.findViewById(R.id.view_playlist_button)
+        override val ratingTextView: TextView = view.findViewById(R.id.rating_text)
     }
 
     override fun getItemViewType(position: Int): Int {
-        var result = ViewTypes.COMEPLETE
-        if(mDataSet[position].playlistID == "") {
-            result = ViewTypes.NO_PLAYLIST
+        if(mDataSet[position].rating == -1) {
+            return ViewTypes.TODAY
         }
-        return result
+
+        if(mDataSet[position].playlistID == "") {
+            return ViewTypes.NO_PLAYLIST
+        }
+
+        return ViewTypes.COMEPLETE
     }
 
 
@@ -46,7 +64,8 @@ class CalendarListAdatper(private val mDataSet: ArrayList<DateInfo>, private val
 
         return when(viewType) {
             ViewTypes.COMEPLETE -> DateViewHolderComplete(LayoutInflater.from(parent.context).inflate(R.layout.date_view_complete, parent, false))
-            ViewTypes.NO_PLAYLIST -> ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.date_view_no_playlist, parent, false))
+            ViewTypes.NO_PLAYLIST -> DateViewHolderNoPlaylist(LayoutInflater.from(parent.context).inflate(R.layout.date_view_no_playlist, parent, false))
+            ViewTypes.TODAY -> DateViewTodayHolder(LayoutInflater.from(parent.context).inflate(R.layout.date_view_today, parent, false))
             else -> throw RuntimeException()
         }
     }
@@ -59,11 +78,20 @@ class CalendarListAdatper(private val mDataSet: ArrayList<DateInfo>, private val
         val formattedDate = df.format(c)
 
         holder.titleTextView.text = String.format(holder.titleTextView.text.toString(), formattedDate)
-        holder.ratingTextView.text = String.format(holder.ratingTextView.text.toString(), currentElement.rating)
+
+        if(holder is RatingSubtitle) {
+            holder.ratingTextView.text = String.format(holder.ratingTextView.text.toString(), currentElement.rating)
+        }
 
         if(holder is DateViewHolderComplete) {
             holder.viewPlaylistButton.setOnClickListener {
-                mOnItemClick.onItemClick(position)
+                mPlaylist.onItemClick(position)
+            }
+        }
+
+        if(holder is DateViewTodayHolder) {
+            holder.createNewEntryButton.setOnClickListener {
+                mNewEntry.onItemClick(position)
             }
         }
     }

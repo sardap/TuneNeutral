@@ -11,9 +11,10 @@ import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
+import java.lang.RuntimeException
 import java.util.*
 
-class MainActivity : AppCompatActivity(), CalendarFragment.OnFragmentInteractionListener {
+class MainActivity : AppCompatActivity(), CalendarFragment.OnFragmentInteractionListener, RatingFragment.OnFragmentInteractionListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,12 +35,7 @@ class MainActivity : AppCompatActivity(), CalendarFragment.OnFragmentInteraction
 
     override fun onStart() {
         super.onStart()
-        val transaction = supportFragmentManager.beginTransaction()
-//        transaction.replace(R.id.fragment_container, RatingFragment.newInstance())
-        transaction.replace(R.id.fragment_container, CalendarFragment.newInstance(Calendar.getInstance().timeInMillis))
-        transaction.addToBackStack(null)
-        transaction.commit()
-
+        changeToCalandarFragment()
     }
 
     private fun getAuthenticationRequest(type: AuthenticationResponse.Type): AuthenticationRequest {
@@ -62,6 +58,29 @@ class MainActivity : AppCompatActivity(), CalendarFragment.OnFragmentInteraction
     }
 
     override fun onFragmentInteraction(uri: Uri) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        when(uri) {
+            Uris.OPEN_RATING_FRAGMENT -> changeToRatingFragment()
+            else -> throw RuntimeException()
+        }
+    }
+
+    override fun onFragmentInteraction(action: RatingFragment.Action) {
+        when(action) {
+            RatingFragment.Action.Complete -> changeToCalandarFragment()
+        }
+    }
+
+    private fun changeToRatingFragment() {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragment_container, RatingFragment.newInstance())
+        transaction.addToBackStack(null)
+        transaction.commit()
+    }
+
+    private fun changeToCalandarFragment() {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragment_container, CalendarFragment.newInstance(Calendar.getInstance().timeInMillis))
+        transaction.addToBackStack(null)
+        transaction.commit()
     }
 }
