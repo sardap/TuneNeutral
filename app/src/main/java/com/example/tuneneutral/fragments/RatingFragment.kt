@@ -15,6 +15,9 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
+import com.example.tuneneutral.database.DatabaseManager
+import com.example.tuneneutral.database.DateInfo
+import java.util.*
 
 
 class RatingFragment : Fragment() {
@@ -53,7 +56,7 @@ class RatingFragment : Fragment() {
         super.onStart()
 
         mRatingSeekBar = view!!.findViewById(R.id.rating_input_seekbar)
-        mRatingText = view!!.findViewById(R.id.rating_text_view)
+        mRatingText = view!!.findViewById(R.id.rating_text)
         mNeutralisedButton = view!!.findViewById(R.id.neutralise_button)
 
         mRatingSeekBar.setOnSeekBarChangeListener(seekBarChangeListener)
@@ -110,6 +113,7 @@ class RatingFragment : Fragment() {
 
 
             neutraliseThread.start()
+
         }
     }
 
@@ -117,17 +121,40 @@ class RatingFragment : Fragment() {
         override fun onReceive(context: Context, intent: Intent) {
             val message = intent.getSerializableExtra(NEUTRALISE_PLAYLIST_MESSAGE)
 
-            val stringId = when(message) {
+            val stringId = when (message) {
                 NeutralisePlaylistMessage.PullingSongs -> R.string.loading_pulling_songs
                 NeutralisePlaylistMessage.Anaylsing -> R.string.loading_anayalsing
                 NeutralisePlaylistMessage.Calcualting -> R.string.loading_calcauting
-                NeutralisePlaylistMessage.Complete -> R.string.loading_compelte
+                NeutralisePlaylistMessage.CompletePlaylistCreated -> R.string.loading_compelte_playlist
+                NeutralisePlaylistMessage.CompleteNoPlaylist-> R.string.loading_compelte_no_playlist
                 else -> throw RuntimeException()
             }
 
             Toast.makeText(context, context.getString(stringId), Toast.LENGTH_LONG).show()
 
-            if(message == NeutralisePlaylistMessage.Complete) {
+            if (message == NeutralisePlaylistMessage.CompletePlaylistCreated) {
+                val playlistID = intent.getStringExtra(MiscConsts.NEUTRALISE_PLAYLIST_ID)
+                if (playlistID != null) {
+                    DatabaseManager.instance.addDateInfo(
+                        DateInfo(
+                            Calendar.getInstance().timeInMillis,
+                            ratingFragment.mRatingSeekBar.progress,
+                            playlistID
+                        )
+                    )
+                }
+                ratingFragment.changeState(State.WaitingInput)
+            }
+
+            if (message == NeutralisePlaylistMessage.CompleteNoPlaylist) {
+                DatabaseManager.instance.addDateInfo(
+                    DateInfo(
+                        Calendar.getInstance().timeInMillis,
+                        ratingFragment.mRatingSeekBar.progress,
+                        ""
+                    )
+                )
+
                 ratingFragment.changeState(State.WaitingInput)
             }
         }
@@ -148,5 +175,4 @@ class RatingFragment : Fragment() {
         override fun onStopTrackingTouch(seekBar: SeekBar) { // called after the user finishes moving the SeekBar
         }
     }
-
 }

@@ -1,6 +1,7 @@
 package com.example.tuneneutral.database
 
 import android.content.Context
+import android.os.Debug
 import android.util.Log
 import org.json.JSONException
 import org.json.JSONObject
@@ -36,16 +37,33 @@ class DatabaseManager private constructor() {
     @Synchronized
     fun addDateInfo(date: DateInfo) {
         val dates = mDb.getJSONArray(DATABASE_NAME.DATES)
+
+        assert(dates.length() > 0 && (dates[dates.length() - 1] as JSONObject).getLong("timestamp") < date.timestamp)
+
         dates.put(date.toJsonObject())
         writeDB()
     }
 
-    @Synchronized
-    fun getDates(startTimeStamp: Long, endTimeStamp: Long): ArrayList<DateInfo> {
+    fun getDates(): ArrayList<DateInfo> {
+        val dates = mDb.getJSONArray(DATABASE_NAME.DATES)
+
+        val result = ArrayList<DateInfo>()
+
+        for (i in 0 until dates.length()) {
+            val dateJson = (dates[i] as JSONObject)
+            result.add(DateInfo(dateJson.getLong("timestamp"), dateJson.getInt("rating"), dateJson.getString("playlistID")))
+        }
+
+        return result
+    }
+
+
+        @Synchronized
+    fun getDatesInRange(startTimeStamp: Long, endTimeStamp: Long): ArrayList<DateInfo> {
         val dates = mDb.getJSONArray(DATABASE_NAME.DATES)
         val result = ArrayList<DateInfo>()
 
-        for (i in 0..dates.length()) {
+        for (i in 0 until dates.length()) {
             val timestamp = (dates[i] as JSONObject).getLong("timestamp")
             if(timestamp in startTimeStamp..endTimeStamp) {
                 val dateJson = (dates[i] as JSONObject)
@@ -67,7 +85,7 @@ class DatabaseManager private constructor() {
     fun getTrackInfo(trackId: String): TrackInfo? {
         val tracks = mDb.getJSONArray(DATABASE_NAME.TRACKS)
 
-        for (i in 0..tracks.length()) {
+        for (i in 0 until tracks.length()) {
             if((tracks[i] as JSONObject).getString("id") == trackId) {
                 return TrackInfo(
                     trackId,

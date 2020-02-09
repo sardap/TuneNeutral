@@ -4,14 +4,15 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.example.tuneneutral.Database.DatabaseManager
-import com.example.tuneneutral.Database.TrackInfo
+import com.example.tuneneutral.database.DatabaseManager
+import com.example.tuneneutral.database.TrackInfo
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONException
 import org.json.JSONObject
+import java.lang.RuntimeException
 import java.text.DateFormat.getDateInstance
 import java.util.*
 import kotlin.collections.ArrayList
@@ -26,18 +27,21 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
 
     override fun run() {
         val tracks = getNTracksWithValence(mCurrentValence)
-        tracks.reverse()
 
         if(tracks.count() > 0) {
+            tracks.reverse()
+
             notifyObvs(NeutralisePlaylistMessage.Calcualting)
             val playlistID = createPlaylist(getCurrentUserID()!!)
 
             if(playlistID != null) {
                 addTracksToPlaylist(playlistID, tracks)
+                notifyComplete(playlistID)
+                return
             }
         }
 
-        notifyObvs(NeutralisePlaylistMessage.Complete)
+        notifyObvs(NeutralisePlaylistMessage.CompleteNoPlaylist)
     }
 
     private fun notifyObvs(message: NeutralisePlaylistMessage) {
@@ -48,6 +52,17 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
 
         lbm.sendBroadcast(intent)
     }
+
+    private fun notifyComplete(playlistID: String) {
+        val lbm = LocalBroadcastManager.getInstance(mContext)
+
+        val intent = Intent(MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE)
+        intent.putExtra(MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE, NeutralisePlaylistMessage.CompletePlaylistCreated)
+        intent.putExtra(MiscConsts.NEUTRALISE_PLAYLIST_ID, playlistID)
+
+        lbm.sendBroadcast(intent)
+    }
+
 
     private fun Double.round(decimals: Int): Double {
         var multiplier = 1.0
@@ -60,7 +75,7 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
     }
 
     private fun getValidTracks(allTracks: HashMap<String, Float>, result: ArrayList<String>, currentValence: Float): ArrayList<String> {
-        if(allTracks.count() == 0 || (currentValence in 0.45f..0.55f)) {
+        if(allTracks.count() == 0 || (currentValence in 0.49f..0.51f)) {
             return result
         }
 

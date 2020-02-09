@@ -1,29 +1,25 @@
 package com.example.tuneneutral
 
 import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
-import com.example.tuneneutral.Database.DatabaseManager
+import com.example.tuneneutral.database.DatabaseManager
+import com.example.tuneneutral.fragments.RatingFragment
+import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONException
-import org.json.JSONObject
-import java.io.IOException
+import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), CalendarFragment.OnFragmentInteractionListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        DatabaseManager.instance.giveContex(this)
+        DatabaseManager.instance.giveContext(this)
 
         findViewById<Button>(R.id.spotify_login_btn).setOnClickListener {
             val request = getAuthenticationRequest(AuthenticationResponse.Type.TOKEN)
@@ -33,6 +29,17 @@ class MainActivity : AppCompatActivity() {
                 request
             )
         }
+    }
+
+
+    override fun onStart() {
+        super.onStart()
+        val transaction = supportFragmentManager.beginTransaction()
+//        transaction.replace(R.id.fragment_container, RatingFragment.newInstance())
+        transaction.replace(R.id.fragment_container, CalendarFragment.newInstance(Calendar.getInstance().timeInMillis))
+        transaction.addToBackStack(null)
+        transaction.commit()
+
     }
 
     private fun getAuthenticationRequest(type: AuthenticationResponse.Type): AuthenticationRequest {
@@ -52,5 +59,9 @@ class MainActivity : AppCompatActivity() {
             val response = AuthenticationClient.getResponse(resultCode, data)
             SpotifyUserInfo.SpotifyUserInfo = response.accessToken
         }
+    }
+
+    override fun onFragmentInteraction(uri: Uri) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

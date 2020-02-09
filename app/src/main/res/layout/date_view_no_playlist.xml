@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/view_holder"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:layout_margin="10sp"
+        android:textAlignment="center"
+        android:text="@string/date_title"
+        />
+
+    <TextView
+        android:id="@+id/rating_text"
+        android:text="@string/default_rating"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_marginBottom="10sp"
+        android:textSize="15sp"
+        />
+
+    <View
+        android:layout_margin="10sp"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@color/colorDateViewLineBreak"/>
+
+</LinearLayout>
