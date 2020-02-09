@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,7 +17,6 @@ import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.DateInfo
-import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import java.util.*
 
 
@@ -134,26 +132,21 @@ class RatingFragment : Fragment() {
     }
 
     private fun neutraliseClicked() {
-        if(SpotifyUserInfo.SpotifyUserInfo == null) {
-            Toast.makeText(context, getString(R.string.error_spotify_token_missing), Toast.LENGTH_SHORT).show()
-        } else {
-            changeState(State.GenPlaylist)
+        changeState(State.GenPlaylist)
 
-            val currentValence = mRatingSeekBar.progress / 100f
+        val currentValence = mRatingSeekBar.progress / 100f
 
-            val generateNeutralised =
-                GenrateNeutralisedPlaylist(
-                    SpotifyUserInfo.SpotifyUserInfo!!,
-                    currentValence,
-                    context!!
-                )
+        val generateNeutralised =
+            GenrateNeutralisedPlaylist(
+                SpotifyUserInfo.SpotifyAccessToken!!,
+                currentValence,
+                context!!
+            )
 
-            val neutraliseThread = Thread(generateNeutralised)
+        val neutraliseThread = Thread(generateNeutralised)
 
 
-            neutraliseThread.start()
-
-        }
+        neutraliseThread.start()
     }
 
     private class MyReceiver(private val ratingFragment: RatingFragment) : BroadcastReceiver() {

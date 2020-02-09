@@ -24,6 +24,9 @@ class CalendarListAdatper(private val mDataSet: ArrayList<DateInfo>, private val
         const val TODAY = 2
     }
 
+    val mDateFormat = DateFormat.getDateInstance()
+
+
     // This seems crazy but fuck it
     interface RatingSubtitle {
         val ratingTextView: TextView
@@ -73,9 +76,8 @@ class CalendarListAdatper(private val mDataSet: ArrayList<DateInfo>, private val
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val currentElement = mDataSet[position]
 
-        val c = Date(currentElement.timestamp)
-        val df = DateFormat.getDateInstance()
-        val formattedDate = df.format(c)
+        val date = Date(currentElement.timestamp)
+        val formattedDate = mDateFormat.format(date)
 
         holder.titleTextView.text = String.format(holder.titleTextView.text.toString(), formattedDate)
 

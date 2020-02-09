@@ -19,6 +19,12 @@
             android:textSize="40sp"
             />
 
+        <View
+            android:layout_margin="10sp"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="@color/colorDateViewLineBreak"/>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/date_list"
             android:layout_width="match_parent"

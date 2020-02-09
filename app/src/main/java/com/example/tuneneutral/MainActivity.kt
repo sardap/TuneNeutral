@@ -4,56 +4,38 @@ import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Button
+import androidx.fragment.app.Fragment
 import com.example.tuneneutral.database.DatabaseManager
+import com.example.tuneneutral.fragments.LoginFragment
 import com.example.tuneneutral.fragments.RatingFragment
 import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import com.spotify.sdk.android.authentication.AuthenticationClient
-import com.spotify.sdk.android.authentication.AuthenticationRequest
-import com.spotify.sdk.android.authentication.AuthenticationResponse
 import java.lang.RuntimeException
 import java.util.*
 
-class MainActivity : AppCompatActivity(), CalendarFragment.OnFragmentInteractionListener, RatingFragment.OnFragmentInteractionListener {
+class MainActivity : AppCompatActivity(),
+    CalendarFragment.OnFragmentInteractionListener,
+    RatingFragment.OnFragmentInteractionListener
+{
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         DatabaseManager.instance.giveContext(this)
-
-        findViewById<Button>(R.id.spotify_login_btn).setOnClickListener {
-            val request = getAuthenticationRequest(AuthenticationResponse.Type.TOKEN)
-            AuthenticationClient.openLoginActivity(
-                this,
-                SpotifyConstants.AUTH_TOKEN_REQUEST_CODE,
-                request
-            )
-        }
     }
-
 
     override fun onStart() {
         super.onStart()
-        changeToCalandarFragment()
-    }
-
-    private fun getAuthenticationRequest(type: AuthenticationResponse.Type): AuthenticationRequest {
-        return AuthenticationRequest.Builder(
-            SpotifyConstants.CLIENT_ID,
-            type,
-            SpotifyConstants.REDIRECT_URI
-        )
-            .setShowDialog(false)
-            .setScopes(arrayOf("user-top-read", "playlist-read-private", "playlist-modify-private", "user-read-private"))
-            .build()
+        changeToLoginFragment()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (SpotifyConstants.AUTH_TOKEN_REQUEST_CODE == requestCode) {
             val response = AuthenticationClient.getResponse(resultCode, data)
-            SpotifyUserInfo.SpotifyUserInfo = response.accessToken
+            SpotifyUserInfo.SpotifyAccessToken = response.accessToken
+            changeToCalandarFragment()
         }
     }
 
@@ -71,15 +53,20 @@ class MainActivity : AppCompatActivity(), CalendarFragment.OnFragmentInteraction
     }
 
     private fun changeToRatingFragment() {
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.fragment_container, RatingFragment.newInstance())
-        transaction.addToBackStack(null)
-        transaction.commit()
+        changeFragment(RatingFragment.newInstance())
     }
 
     private fun changeToCalandarFragment() {
+        changeFragment(CalendarFragment.newInstance(Calendar.getInstance().timeInMillis))
+    }
+
+    private fun changeToLoginFragment() {
+        changeFragment(LoginFragment.newInstance())
+    }
+
+    private fun changeFragment(fragment: Fragment) {
         val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.fragment_container, CalendarFragment.newInstance(Calendar.getInstance().timeInMillis))
+        transaction.replace(R.id.fragment_container, fragment)
         transaction.addToBackStack(null)
         transaction.commit()
     }
