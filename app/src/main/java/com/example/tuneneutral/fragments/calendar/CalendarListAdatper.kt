@@ -12,7 +12,13 @@ import java.text.DateFormat
 import java.util.*
 
 
-class CalendarListAdatper(private val mDataSet: ArrayList<DateInfo>, private val mPlaylist: OnItemClickListener, private val mNewEntry: OnItemClickListener) : RecyclerView.Adapter<CalendarListAdatper.ViewHolder>() {
+class CalendarListAdatper(
+    private val mDataSet: ArrayList<DateInfo>,
+    private val mPlaylist: OnItemClickListener,
+    private val mNewEntry: OnItemClickListener
+    ) :
+    RecyclerView.Adapter<CalendarListAdatper.ViewHolder>()
+{
 
     interface OnItemClickListener {
         fun onItemClick(pos: Int)

@@ -1,18 +1,24 @@
 package com.example.tuneneutral.fragments
 
+import android.app.ActionBar
+import android.app.Dialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.*
+import android.view.*
+import android.widget.Button
+import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
 import com.example.tuneneutral.database.DatabaseManager
@@ -38,15 +44,22 @@ class RatingFragment : Fragment() {
         WaitingInput, GenPlaylist, Complete
     }
 
-    private var mState = State.WaitingInput
-    private var listener: OnFragmentInteractionListener? = null
+    private class DialogViewHolder(dialog: Dialog) {
+        val mMessageText = dialog.findViewById<TextView>(R.id.loading_message)
+    }
 
-    private lateinit var viewModel: RatingViewModel
+    private var mState = State.WaitingInput
+    private var mListener: OnFragmentInteractionListener? = null
+
+    private lateinit var mViewModel: RatingViewModel
     private lateinit var mReceiver: MyReceiver
 
     private lateinit var mRatingSeekBar: SeekBar
     private lateinit var mRatingText: TextView
     private lateinit var mNeutralisedButton: Button
+
+    private lateinit var mDialog: Dialog
+    private lateinit var mDialogViewHolder: DialogViewHolder
 
     private val seekBarChangeListener: OnSeekBarChangeListener = object : OnSeekBarChangeListener {
         override fun onProgressChanged(
@@ -74,7 +87,7 @@ class RatingFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProviders.of(this).get(RatingViewModel::class.java)
+        mViewModel = ViewModelProviders.of(this).get(RatingViewModel::class.java)
     }
 
     override fun onStart() {
@@ -108,7 +121,7 @@ class RatingFragment : Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnFragmentInteractionListener) {
-            listener = context
+            mListener = context
         } else {
             throw RuntimeException("$context must implement OnFragmentInteractionListener")
         }
@@ -116,12 +129,8 @@ class RatingFragment : Fragment() {
 
 
     private fun changeState(newState: State) {
-        if(newState == State.WaitingInput) {
-            mNeutralisedButton.visibility = View.VISIBLE
-        } else if(newState == State.GenPlaylist) {
-            mNeutralisedButton.visibility = View.GONE
-        } else if (newState == State.Complete) {
-            listener?.onFragmentInteraction(Action.Complete)
+        if (newState == State.Complete) {
+            mListener?.onFragmentInteraction(Action.Complete)
         }
 
         mState = newState
@@ -136,6 +145,21 @@ class RatingFragment : Fragment() {
 
         val currentValence = mRatingSeekBar.progress / 100f
 
+        mDialog = Dialog(context!!, android.R.style.ThemeOverlay_Material_Dark)
+        mDialog.setContentView(R.layout.creating_playlist_popup)
+
+        val window = mDialog .window
+        if(window != null){
+            window.setLayout(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT)
+            window.setGravity(Gravity.CENTER)
+            window.setBackgroundDrawable(ColorDrawable(Color.argb(100, 0, 0, 0)))
+        }
+
+        mDialog.window?.attributes?.dimAmount = 0.7f
+        mDialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+
+        mDialogViewHolder = DialogViewHolder(mDialog)
+
         val generateNeutralised =
             GenrateNeutralisedPlaylist(
                 SpotifyUserInfo.SpotifyAccessToken!!,
@@ -145,8 +169,8 @@ class RatingFragment : Fragment() {
 
         val neutraliseThread = Thread(generateNeutralised)
 
-
         neutraliseThread.start()
+        mDialog.show()
     }
 
     private class MyReceiver(private val ratingFragment: RatingFragment) : BroadcastReceiver() {
@@ -162,10 +186,14 @@ class RatingFragment : Fragment() {
                 else -> throw RuntimeException()
             }
 
-            Toast.makeText(context, context.getString(stringId), Toast.LENGTH_LONG).show()
+            ratingFragment.mDialogViewHolder.mMessageText.text = context.getString(stringId)
 
             if (message == NeutralisePlaylistMessage.CompletePlaylistCreated) {
-                val playlistID = intent.getStringExtra(MiscConsts.NEUTRALISE_PLAYLIST_ID)
+                val playlistID = if(message == NeutralisePlaylistMessage.CompletePlaylistCreated) {
+                    intent.getStringExtra(MiscConsts.NEUTRALISE_PLAYLIST_ID)
+                } else {
+                    ""
+                }
                 if (playlistID != null) {
                     DatabaseManager.instance.addDateInfo(
                         DateInfo(
@@ -176,18 +204,7 @@ class RatingFragment : Fragment() {
                     )
                 }
 
-                ratingFragment.changeState(State.Complete)
-            }
-
-            if (message == NeutralisePlaylistMessage.CompleteNoPlaylist) {
-                DatabaseManager.instance.addDateInfo(
-                    DateInfo(
-                        Calendar.getInstance().timeInMillis,
-                        ratingFragment.mRatingSeekBar.progress,
-                        ""
-                    )
-                )
-
+                ratingFragment.mDialog.dismiss()
                 ratingFragment.changeState(State.Complete)
             }
         }

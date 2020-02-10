@@ -18,6 +18,12 @@ class MainActivity : AppCompatActivity(),
     RatingFragment.OnFragmentInteractionListener
 {
 
+    private enum class State {
+        ShowingCalander, ShowingRating
+    }
+
+    private var mState = State.ShowingCalander
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -27,14 +33,30 @@ class MainActivity : AppCompatActivity(),
 
     override fun onStart() {
         super.onStart()
-        changeToLoginFragment()
+
+        when(mState) {
+            State.ShowingCalander -> changeToCalandarFragment()
+            State.ShowingRating -> changeToRatingFragment()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        val timeGotten = SpotifyUserInfo.TimeGotten
+        if(SpotifyUserInfo.SpotifyAccessToken == null || timeGotten != null && timeGotten + 3600000 < Calendar.getInstance().timeInMillis) {
+            changeToLoginFragment()
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (SpotifyConstants.AUTH_TOKEN_REQUEST_CODE == requestCode) {
             val response = AuthenticationClient.getResponse(resultCode, data)
+
             SpotifyUserInfo.SpotifyAccessToken = response.accessToken
+            SpotifyUserInfo.TimeGotten = Calendar.getInstance().timeInMillis
+
             changeToCalandarFragment()
         }
     }
