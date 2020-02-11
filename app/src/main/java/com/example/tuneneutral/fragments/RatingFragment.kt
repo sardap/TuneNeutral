@@ -127,7 +127,6 @@ class RatingFragment : Fragment() {
         }
     }
 
-
     private fun changeState(newState: State) {
         if (newState == State.Complete) {
             mListener?.onFragmentInteraction(Action.Complete)
