@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.tuneneutral.R
 import com.example.tuneneutral.database.DateInfo
 import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -85,7 +86,10 @@ class CalendarListAdatper(
         val date = Date(currentElement.timestamp)
         val formattedDate = mDateFormat.format(date)
 
-        holder.titleTextView.text = String.format(holder.titleTextView.text.toString(), formattedDate)
+        val sdf = SimpleDateFormat("EEEE")
+        val dayString: String = sdf.format(date)
+
+        holder.titleTextView.text = String.format(holder.titleTextView.text.toString(), dayString, formattedDate)
 
         if(holder is RatingSubtitle) {
             holder.ratingTextView.text = String.format(holder.ratingTextView.text.toString(), currentElement.rating)

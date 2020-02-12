@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.tuneneutral.database.DatabaseManager
@@ -84,10 +85,16 @@ class MainActivity : AppCompatActivity(),
         if (SpotifyConstants.AUTH_TOKEN_REQUEST_CODE == requestCode) {
             val response = AuthenticationClient.getResponse(resultCode, data)
 
-            SpotifyUserInfo.SpotifyAccessToken = response.accessToken
-            SpotifyUserInfo.TimeGotten = Calendar.getInstance().timeInMillis
+            if(response.accessToken != null) {
+                SpotifyUserInfo.SpotifyAccessToken = response.accessToken
+                SpotifyUserInfo.TimeGotten = Calendar.getInstance().timeInMillis
 
-            changeToCalandarFragment()
+                changeToCalandarFragment()
+            } else {
+                val toast = Toast.makeText(this, "Unable to Login into Spotify Error:${response.error}", Toast.LENGTH_LONG)
+                toast.setGravity(Gravity.CENTER, 0, 0)
+                toast.show()
+            }
         }
     }
 

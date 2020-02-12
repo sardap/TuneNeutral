@@ -40,6 +40,7 @@
                 android:id="@+id/rating_input_seekbar"
                 android:max="100"
                 android:progress="50"
+                android:padding="10sp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 />

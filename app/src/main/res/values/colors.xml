@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorPrimary">#b93333</color>
+    <color name="colorPrimaryDark">#a92b29</color>
+    <color name="colorAccent">#33b9b9</color>
     <color name="colorSpotifyButton">#1ED761</color>
     <color name="colorDateViewLineBreak">#000000</color>
 </resources>
