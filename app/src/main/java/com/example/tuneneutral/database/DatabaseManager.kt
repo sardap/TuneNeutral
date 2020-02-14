@@ -1,11 +1,13 @@
 package com.example.tuneneutral.database
 
 import android.content.Context
-import android.os.Debug
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.*
+import java.lang.Exception
 
 
 class DatabaseManager private constructor() {
@@ -16,17 +18,13 @@ class DatabaseManager private constructor() {
         const val DATABASE_TAG = "database"
     }
 
-    private object DATABASE_NAME {
-        const val TRACKS = "tracks"
-        const val DATES = "dates"
-    }
-
     companion object {
         val instance: DatabaseManager by lazy { HOLDER.INSTANCE }
     }
 
+    private val mGson = Gson()
     private lateinit var mContext: Context
-    private lateinit var mDb: JSONObject
+    private lateinit var mDb: Database
 
     @Synchronized
     fun giveContext(context: Context) {
@@ -35,39 +33,29 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    fun addDateInfo(date: DateInfo) {
-        val dates = mDb.getJSONArray(DATABASE_NAME.DATES)
+    fun addDateInfo(date: DayRating) {
+        val dates = mDb.dayRatings
 
-        assert(dates.length() > 0 && (dates[dates.length() - 1] as JSONObject).getLong("timestamp") < date.timestamp)
+        assert(dates.count() > 0 && (dates[dates.count() - 1].timestamp < date.timestamp))
 
-        dates.put(date.toJsonObject())
+        dates.add(date)
         writeDB()
     }
 
-    fun getDates(): ArrayList<DateInfo> {
-        val dates = mDb.getJSONArray(DATABASE_NAME.DATES)
-
-        val result = ArrayList<DateInfo>()
-
-        for (i in 0 until dates.length()) {
-            val dateJson = (dates[i] as JSONObject)
-            result.add(DateInfo(dateJson.getLong("timestamp"), dateJson.getInt("rating"), dateJson.getString("playlistID")))
-        }
-
-        return result
+    @Synchronized
+    fun getDayRatings(): ArrayList<DayRating> {
+        return ArrayList(mDb.dayRatings)
     }
 
+    @Synchronized
+    fun getDatesInRange(startTimeStamp: Long, endTimeStamp: Long): ArrayList<DayRating> {
+        val dates = mDb.dayRatings
+        val result = ArrayList<DayRating>()
 
-        @Synchronized
-    fun getDatesInRange(startTimeStamp: Long, endTimeStamp: Long): ArrayList<DateInfo> {
-        val dates = mDb.getJSONArray(DATABASE_NAME.DATES)
-        val result = ArrayList<DateInfo>()
-
-        for (i in 0 until dates.length()) {
-            val timestamp = (dates[i] as JSONObject).getLong("timestamp")
+        for (i in 0 until dates.count()) {
+            val timestamp = dates[i].timestamp
             if(timestamp in startTimeStamp..endTimeStamp) {
-                val dateJson = (dates[i] as JSONObject)
-                result.add(DateInfo(dateJson.getLong("timestamp"), dateJson.getInt("rating"), dateJson.getString("playlistID")))
+                result.add(dates[i])
             }
         }
 
@@ -76,21 +64,17 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     fun addTrackInfo(track: TrackInfo) {
-        val tracks = mDb.getJSONArray(DATABASE_NAME.TRACKS)
-        tracks.put(track.jsonObject)
+        mDb.tracks.add(track)
         writeDB()
     }
 
     @Synchronized
     fun getTrackInfo(trackId: String): TrackInfo? {
-        val tracks = mDb.getJSONArray(DATABASE_NAME.TRACKS)
+        val tracks = mDb.tracks
 
-        for (i in 0 until tracks.length()) {
-            if((tracks[i] as JSONObject).getString("id") == trackId) {
-                return TrackInfo(
-                    trackId,
-                    (tracks[i] as JSONObject)
-                )
+        for (track in tracks) {
+            if(track.tackId == trackId) {
+                return track
             }
         }
 
@@ -99,10 +83,9 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     fun getAllTrackIds(): List<String> {
-        val tracks = getAllTracks()
         val result = ArrayList<String>()
 
-        for (track in tracks) {
+        for (track in getAllTracks()) {
             result.add(track.tackId)
         }
 
@@ -111,24 +94,7 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     fun getAllTracks(): List<TrackInfo> {
-        val tracks = mDb.getJSONArray(DATABASE_NAME.TRACKS)
-        val result = ArrayList<TrackInfo>()
-        val length = tracks.length() - 1
-
-        for (i in 0..length) {
-            val trackInfo = TrackInfo(
-                (tracks[i] as JSONObject).getString("id"),
-                (tracks[i] as JSONObject)
-            )
-
-            result.add(trackInfo)
-        }
-
-        return result
-    }
-
-    private fun checkDB(): Boolean {
-        return mDb.has(DATABASE_NAME.DATES) && mDb.has(DATABASE_NAME.TRACKS)
+        return ArrayList(mDb.tracks)
     }
 
     @Synchronized
@@ -147,22 +113,12 @@ class DatabaseManager private constructor() {
 
             val jsonStr = stringBuilder.toString()
 
-            mDb = JSONObject(jsonStr)
+            mDb = mGson.fromJson(jsonStr, Database::class.java)
 
-            if(!checkDB()) {
-                initaliseDB()
-                loadDB()
-            }
-        } catch (e: FileNotFoundException) {
-            Log.e(HOLDER.DATABASE_TAG, "File not found: $e")
-            initaliseDB()
-            loadDB()
-        } catch (e: JSONException) {
+        } catch (e: Exception) {
             Log.e(HOLDER.DATABASE_TAG, "Json file parsing: $e")
             initaliseDB()
             loadDB()
-        } catch (e: IOException) {
-            Log.e(HOLDER.DATABASE_TAG, "Can not read file: $e")
         }
     }
 
@@ -170,7 +126,7 @@ class DatabaseManager private constructor() {
     private fun writeDB() {
         try {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
-            outputStreamWriter.write(mDb.toString())
+            outputStreamWriter.write(mGson.toJson(mDb))
             outputStreamWriter.close()
         } catch (e: IOException) {
             Log.e("Exception", "File write failed: $e")
@@ -180,7 +136,10 @@ class DatabaseManager private constructor() {
     private fun initaliseDB() {
         try {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
-            outputStreamWriter.write("{ \"${DATABASE_NAME.TRACKS}\" : [], \"${DATABASE_NAME.DATES}\" : [] }")
+
+            outputStreamWriter.write(
+                mGson.toJson(Database(ArrayList(), ArrayList(), ArrayList()))
+            )
             outputStreamWriter.close()
         } catch (e: IOException) {
             Log.e("Exception", "File write failed: $e")

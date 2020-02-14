@@ -14,15 +14,14 @@ import android.widget.Button
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
+import com.example.tuneneutral.playlistGen.GenrateNeutralisedPlaylist
 import com.example.tuneneutral.database.DatabaseManager
-import com.example.tuneneutral.database.DateInfo
+import com.example.tuneneutral.database.DayRating
 import java.util.*
 
 
@@ -195,7 +194,7 @@ class RatingFragment : Fragment() {
                 }
                 if (playlistID != null) {
                     DatabaseManager.instance.addDateInfo(
-                        DateInfo(
+                        DayRating(
                             Calendar.getInstance().timeInMillis,
                             ratingFragment.mRatingSeekBar.progress,
                             playlistID

@@ -7,14 +7,14 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tuneneutral.R
-import com.example.tuneneutral.database.DateInfo
+import com.example.tuneneutral.database.DayRating
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
 
 class CalendarListAdatper(
-    private val mDataSet: ArrayList<DateInfo>,
+    private val mDataSet: ArrayList<DayRating>,
     private val mPlaylist: OnItemClickListener,
     private val mNewEntry: OnItemClickListener
     ) :

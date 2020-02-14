@@ -1,8 +1,6 @@
 package com.example.tuneneutral.fragments.calendar
 
-import android.content.ComponentCallbacks
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -16,7 +14,7 @@ import com.example.tuneneutral.R
 import com.example.tuneneutral.SpotifyUtiltiy
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
-import com.example.tuneneutral.database.DateInfo
+import com.example.tuneneutral.database.DayRating
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -38,7 +36,7 @@ class CalendarFragment : Fragment() {
     private lateinit var mRecyclerView: RecyclerView
     private lateinit var mViewAdapter: RecyclerView.Adapter<*>
     private lateinit var mViewManager: RecyclerView.LayoutManager
-    private lateinit var mDates : ArrayList<DateInfo>
+    private lateinit var mDates : ArrayList<DayRating>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,9 +48,9 @@ class CalendarFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        mDates = DatabaseManager.instance.getDates()
+        mDates = DatabaseManager.instance.getDayRatings()
         mDates.reverse()
-        mDates.add(0, DateInfo(Calendar.getInstance().timeInMillis, -1, ""))
+        mDates.add(0, DayRating(Calendar.getInstance().timeInMillis, -1, ""))
 
         mRecyclerView = view!!.findViewById(R.id.date_list)
         mViewAdapter = CalendarListAdatper(mDates,

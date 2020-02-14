@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
 import com.example.tuneneutral.fragments.calendar.CalendarFragment
+import com.example.tuneneutral.playlistGen.PullNewTracks
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity(),
     private var mState = State.ShowingCalander
     private lateinit var mSpotifyLoginDialog: Dialog
     private lateinit var mSpotifyLoginDialogViewHolder: SpotifyLoginDialogViewHolder
+    private lateinit var mPullSongsThread: Thread
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,6 +90,9 @@ class MainActivity : AppCompatActivity(),
             if(response.accessToken != null) {
                 SpotifyUserInfo.SpotifyAccessToken = response.accessToken
                 SpotifyUserInfo.TimeGotten = Calendar.getInstance().timeInMillis
+
+                mPullSongsThread = Thread(PullNewTracks(SpotifyUserInfo.SpotifyAccessToken!!))
+                mPullSongsThread.start()
 
                 changeToCalandarFragment()
             } else {
