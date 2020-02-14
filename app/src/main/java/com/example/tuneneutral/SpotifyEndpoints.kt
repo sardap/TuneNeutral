@@ -138,7 +138,7 @@ class SpotifyEndpoints {
             var result = ArrayList<String>()
 
             val request = Request.Builder()
-                .url("https://api.spotify.com/v1/me/top/tracks?time_range=${timePeriod}&offset=${offset}&limit=20")
+                .url("https://api.spotify.com/v1/me/top/tracks?time_range=${timePeriod}&offset=${offset}&limit=5")
                 .addHeader("Authorization", "Bearer $accessToken")
                 .build()
 

@@ -33,12 +33,31 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    fun addPullHistory(trackSources: TrackSources, pullHistory: PullHistory) {
+        mDb.pullHistory[trackSources] = pullHistory
+
+        writeDB()
+    }
+
+    @Synchronized
     fun addDateInfo(date: DayRating) {
         val dates = mDb.dayRatings
 
         assert(dates.count() > 0 && (dates[dates.count() - 1].timestamp < date.timestamp))
 
         dates.add(date)
+        writeDB()
+    }
+
+    @Synchronized
+    fun getPullHistroy() : HashMap<TrackSources, PullHistory> {
+        return HashMap(mDb.pullHistory)
+    }
+
+    @Synchronized
+    fun deletePullHistroy(key: TrackSources) {
+        mDb.pullHistory.remove(key)
+
         writeDB()
     }
 
@@ -98,6 +117,11 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    fun commitChanges() {
+        writeDB()
+    }
+
+    @Synchronized
     private fun loadDB() {
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)
@@ -138,7 +162,7 @@ class DatabaseManager private constructor() {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
 
             outputStreamWriter.write(
-                mGson.toJson(Database(ArrayList(), ArrayList(), ArrayList()))
+                mGson.toJson(Database(ArrayList(), HashMap(), ArrayList()))
             )
             outputStreamWriter.close()
         } catch (e: IOException) {
