@@ -5,20 +5,25 @@ import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.transition.Fade
+import android.transition.TransitionInflater
+import android.transition.TransitionSet
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import com.example.tuneneutral.R
-import com.example.tuneneutral.spotify.SpotifyConstants
-import com.example.tuneneutral.spotify.SpotifyUserInfo
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
+import com.example.tuneneutral.fragments.StatusBar
 import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import com.example.tuneneutral.playlistGen.PullNewTracks
+import com.example.tuneneutral.spotify.SpotifyConstants
+import com.example.tuneneutral.spotify.SpotifyUserInfo
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
@@ -29,6 +34,10 @@ class MainActivity : AppCompatActivity(),
     CalendarFragment.OnFragmentInteractionListener,
     RatingFragment.OnFragmentInteractionListener
 {
+    companion object {
+        private const val MOVE_DEFAULT_TIME: Long = 1000 / 5
+        private const val FADE_DEFAULT_TIME: Long = 300 / 5
+    }
 
     private enum class State {
         ShowingCalander, ShowingRating
@@ -54,6 +63,7 @@ class MainActivity : AppCompatActivity(),
     private lateinit var mSpotifyLoginDialogViewHolder: SpotifyLoginDialogViewHolder
     private lateinit var mPullSongsThread: Thread
     private lateinit var mStatusBarFrameLayout: FrameLayout
+    private lateinit var mFragmentManager: FragmentManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,7 +75,9 @@ class MainActivity : AppCompatActivity(),
     override fun onStart() {
         super.onStart()
 
-        mStatusBarFrameLayout = findViewById(R.id.status_bar)
+        mStatusBarFrameLayout = findViewById(R.id.fragment_status_bar)
+
+        mFragmentManager = supportFragmentManager
 
         logIntoSpotify()
 
@@ -93,7 +105,6 @@ class MainActivity : AppCompatActivity(),
                 mPullSongsThread = Thread(PullNewTracks(SpotifyUserInfo.SpotifyAccessToken!!))
                 mPullSongsThread.start()
 
-                changeToCalandarFragment()
             } else {
                 initloginWindow()
                 checkSpotifyLogin()
@@ -184,6 +195,16 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
+    private fun initStatusBar() {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.fragment_status_bar, StatusBar.newInstance())
+        transaction.commit()
+    }
+
+    private fun showStatusBar() {
+
+    }
+
     private fun changeToRatingFragment() {
         changeFragment(RatingFragment.newInstance())
     }
@@ -192,9 +213,21 @@ class MainActivity : AppCompatActivity(),
         changeFragment(CalendarFragment.newInstance(Calendar.getInstance().timeInMillis))
     }
 
-    private fun changeFragment(fragment: Fragment) {
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.fragment_container, fragment)
+    private fun changeFragment(nextFragment: Fragment) {
+        val previousFragment = mFragmentManager.findFragmentById(R.id.fragment_container)
+
+        val transaction = mFragmentManager.beginTransaction()
+
+        if(previousFragment != null) {
+            if(previousFragment is CalendarFragment) {
+                transaction.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right, 0, 0)
+            } else {
+                transaction.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left, 0, 0)
+            }
+        }
+
+
+        transaction.replace(R.id.fragment_container, nextFragment)
         transaction.addToBackStack(null)
         transaction.commit()
     }
