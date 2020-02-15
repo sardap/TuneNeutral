@@ -83,6 +83,7 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     fun addTrackInfo(track: TrackInfo) {
+        Log.d(HOLDER.DATABASE_TAG, "Adding new track ${track}}")
         mDb.tracks.add(track)
         writeDB()
     }
@@ -106,6 +107,30 @@ class DatabaseManager private constructor() {
 
         for (track in getAllTracks()) {
             result.add(track.tackId)
+        }
+
+        return result
+    }
+
+    @Synchronized
+    fun getTopTrackIds(): List<String> {
+        val result = ArrayList<String>()
+
+        for (track in getTopTracks()) {
+            result.add(track.tackId)
+        }
+
+        return result
+    }
+
+    @Synchronized
+    fun getTopTracks(): List<TrackInfo> {
+        val result = ArrayList<TrackInfo>()
+
+        for (track in getAllTracks()) {
+            if(track.topTrack) {
+                result.add(track)
+            }
         }
 
         return result

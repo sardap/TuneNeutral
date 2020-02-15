@@ -1,12 +1,16 @@
 package com.example.tuneneutral.playlistGen
 
 import android.util.Log
+import com.example.tuneneutral.BuildConfig
+import com.example.tuneneutral.SpotifyEndpoints.Companion.getRecommendedTracks
 import com.example.tuneneutral.SpotifyEndpoints.Companion.getTopTracks
 import com.example.tuneneutral.SpotifyEndpoints.Companion.getTrackAnaysis
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.PullHistory
+import com.example.tuneneutral.database.TrackInfo
 import com.example.tuneneutral.database.TrackSources
 import java.util.*
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -16,42 +20,95 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         short_term, medium_term, long_term
     }
 
+    private class TrackSource(val trackSource: TrackSources, val timePeriod: SpotifyTimeRange)
+
     private companion object {
         const val MAX_SHORT_LIST = 200
         const val MIN_IN_MILS = 60000
         const val WEEK_IN_MILS = 604800000L
+        const val DAY_IN_MILS = 86400000L
         const val LOGGER_TAG = "PullTracks"
     }
 
+    private val mTopTrackPullInfo = arrayListOf(
+        TrackSource(TrackSources.TopTracksShort, SpotifyTimeRange.short_term),
+        TrackSource(TrackSources.TopTracksMed, SpotifyTimeRange.medium_term),
+        TrackSource(TrackSources.TopTracksLong, SpotifyTimeRange.long_term)
+    )
+
     override fun run() {
         val pullHistory = DatabaseManager.instance.getPullHistroy()
+
+        if(
+            !BuildConfig.DEBUG &&
+            pullHistory.count() > 0 &&
+            pullHistory.values.minBy { it.timestamp }!!.timestamp > Calendar.getInstance().timeInMillis - DAY_IN_MILS
+        ) {
+            Log.i(LOGGER_TAG, "Already Pulled songs today!")
+            return
+        }
+
         cleanPullHistory(pullHistory)
 
-        var pulled = false
+        val existingTracks = DatabaseManager.instance.getAllTrackIds()
 
-        val ary = ArrayList<Pair<TrackSources, SpotifyTimeRange>>()
-        ary.add(Pair(TrackSources.TopTracksShort, SpotifyTimeRange.short_term))
-        ary.add(Pair(TrackSources.TopTracksMed, SpotifyTimeRange.medium_term))
-        ary.add(Pair(TrackSources.TopTracksLong, SpotifyTimeRange.long_term))
+        if(
+            pullHistory.count() == mTopTrackPullInfo.count() ||
+            existingTracks.count() > 100 && ThreadLocalRandom.current().nextInt(2) == 0
+        ) {
+            pullRecommendedTracks()
+        } else {
+            pullTopTracks(pullHistory)
+        }
 
-        for (entry in ary) {
-            if(pullHistory.containsKey(entry.first) && !pullHistory[entry.first]!!.pullComplete) {
-                pullTopTracks(mSpotifyAccessToken, entry.second, pullHistory[entry.first]!!)
-                DatabaseManager.instance.addPullHistory(entry.first, pullHistory[entry.first]!!)
-                pulled = true
+        DatabaseManager.instance.commitChanges()
+    }
+
+    private fun pullRecommendedTracks() {
+        val trackInfo = DatabaseManager.instance.getTopTracks().shuffled()
+
+        val seedTracks = ArrayList<TrackInfo>()
+
+        for(i in 0 until 5) {
+            seedTracks.add(trackInfo[i])
+        }
+
+        val newTracks = getRecommendedTracks(
+            mSpotifyAccessToken,
+            5,
+            seedTracks.map { it.tackId },
+            seedTracks.map { it.speechiness }.average(),
+            seedTracks.map { it.acousticness }.average(),
+            seedTracks.map { it.tempo }.average(),
+            seedTracks.map { it.timeSignature }.average().toInt()
+        )
+
+        pullTrackInfo(newTracks.minus(DatabaseManager.instance.getAllTrackIds()), false)
+
+        DatabaseManager.instance.addPullHistory(TrackSources.RecomendedTracks, PullHistory(Calendar.getInstance().timeInMillis, 0, false))
+    }
+
+    private fun pullTopTracks(pullHistory: HashMap<TrackSources, PullHistory>) {
+        val topTracksPullInfoStack = Stack<TrackSource>()
+        mTopTrackPullInfo.forEach { topTracksPullInfoStack.push(it) }
+
+        while (topTracksPullInfoStack.count() > 0) {
+            val top = topTracksPullInfoStack.pop()
+            if(pullHistory.containsKey(top.trackSource) && !pullHistory[top.trackSource]!!.pullComplete) {
+                pullTopTracks(mSpotifyAccessToken, top.timePeriod, pullHistory[top.trackSource]!!)
+                DatabaseManager.instance.addPullHistory(top.trackSource, pullHistory[top.trackSource]!!)
                 break
             }
         }
 
-        if(!pulled) {
-            val nextPull = ary[ary.indexOfFirst { !pullHistory.containsKey(it.first) }]
+        if(topTracksPullInfoStack.count() == 0) {
+            val i = mTopTrackPullInfo.indexOfFirst { !pullHistory.containsKey(it.trackSource) }
+            val nextPull = mTopTrackPullInfo[i]
             PullHistory(Calendar.getInstance().timeInMillis, 0, false).apply {
-                pullTopTracks(mSpotifyAccessToken, nextPull.second, this)
-                DatabaseManager.instance.addPullHistory(nextPull.first, this)
+                pullTopTracks(mSpotifyAccessToken, nextPull.timePeriod, this)
+                DatabaseManager.instance.addPullHistory(nextPull.trackSource, this)
             }
         }
-
-        DatabaseManager.instance.commitChanges()
     }
 
     private fun cleanPullHistory(pullHistory: HashMap<TrackSources, PullHistory>) {
@@ -89,7 +146,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         val startTime = Calendar.getInstance().timeInMillis
         do {
             lastFetchTracks = getTopTracks(accessToken, timePeriod.toString(), offset)
-            pullTrackInfo(lastFetchTracks.minus(existingTracks))
+            pullTrackInfo(lastFetchTracks.minus(existingTracks), true)
             offset += 20
             Log.d(LOGGER_TAG, "Pulled ${lastFetchTracks.count()} tracks total time taken ${(Calendar.getInstance().timeInMillis - startTime)}")
         }while (Calendar.getInstance().timeInMillis - startTime < 5000 && lastFetchTracks.count() > 0)
@@ -101,9 +158,9 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         }
     }
 
-    private fun pullTrackInfo(trackIDs: List<String>) {
+    private fun pullTrackInfo(trackIDs: List<String>, topTrack: Boolean) {
         for (track in trackIDs) {
-            val trackInfo = getTrackAnaysis(mSpotifyAccessToken, track)
+            val trackInfo = getTrackAnaysis(mSpotifyAccessToken, track, topTrack)
             if(trackInfo != null) {
                 DatabaseManager.instance.addTrackInfo(trackInfo)
             }

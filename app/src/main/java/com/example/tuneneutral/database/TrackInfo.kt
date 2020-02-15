@@ -1,20 +1,19 @@
 package com.example.tuneneutral.database
 
-import org.json.JSONObject
-
-class TrackInfo(public val tackId: String, jsonObject: JSONObject)  {
-    val durationMs = jsonObject.getInt("duration_ms")
-    val key = jsonObject.getInt("key")
-    val mode = jsonObject.getInt("mode")
-    val timeSignature = jsonObject.getInt("time_signature")
-    val acousticness = jsonObject.getDouble("acousticness")
-    val danceability = jsonObject.getDouble("danceability")
-    val energy = jsonObject.getDouble("energy")
-    val instrumentalness = jsonObject.getDouble("instrumentalness")
-    val liveness = jsonObject.getDouble("liveness")
-    val loudness = jsonObject.getDouble("loudness")
-    val speechiness = jsonObject.getDouble("speechiness")
-    val valence = jsonObject.getDouble("valence")
-    val tempo = jsonObject.getDouble("tempo")
-    val jsonObject = jsonObject
-}
+data class TrackInfo(
+    val tackId: String,
+    val topTrack: Boolean,
+    val durationMs: Int,
+    val key: Int,
+    val mode: Int,
+    val timeSignature: Int,
+    val acousticness: Double,
+    val danceability: Double,
+    val energy: Double,
+    val instrumentalness: Double,
+    val liveness: Double,
+    val loudness: Double,
+    val speechiness: Double,
+    val valence: Double,
+    val tempo: Double
+)

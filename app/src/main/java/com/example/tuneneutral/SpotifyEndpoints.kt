@@ -2,6 +2,9 @@ package com.example.tuneneutral
 
 import android.util.Log
 import com.example.tuneneutral.database.TrackInfo
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -9,9 +12,11 @@ import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
 import kotlin.collections.ArrayList
+import kotlin.math.round
 
 class SpotifyEndpoints {
     companion object {
+        private const val SPOTIFY_END_POINT = "SpotifyEndPoint"
 
         private val mOkHttpClient = OkHttpClient()
 
@@ -28,12 +33,12 @@ class SpotifyEndpoints {
             if (response.isSuccessful) {
                 try {
                     result = JSONObject(response.body!!.string()).getString("id")
-                    Log.d("Status: ", "Got UserID: $result")
+                    Log.d(SPOTIFY_END_POINT, "Got UserID: $result")
                 } catch (e: JSONException) {
-                    Log.d("Status: ", "Failed to get user: $e")
+                    Log.d(SPOTIFY_END_POINT, "Failed to get user: $e")
                 }
             } else {
-                Log.d("Status: ", "Failed to get user")
+                Log.d(SPOTIFY_END_POINT, "Failed to get user")
             }
 
             return result
@@ -63,13 +68,13 @@ class SpotifyEndpoints {
             if (response.isSuccessful) {
                 try {
                     val result = JSONObject(response.body!!.string()).getString("id")
-                    Log.d("Status: ", "playlist Created! ID:$result")
+                    Log.d(SPOTIFY_END_POINT, "playlist Created! ID:$result")
                     return result
                 } catch (e: JSONException) {
-                    Log.d("Status: ", "Failed to create playlist: $e")
+                    Log.d(SPOTIFY_END_POINT, "Failed to create playlist: $e")
                 }
             } else {
-                Log.d("Status: ", "Failed to create playlist: $response")
+                Log.d(SPOTIFY_END_POINT, "Failed to create playlist: $response")
             }
 
             return null
@@ -94,20 +99,20 @@ class SpotifyEndpoints {
 
             if (response.isSuccessful) {
                 try {
-                    Log.d("Status: ", "tracks added")
+                    Log.d(SPOTIFY_END_POINT, "tracks added")
                     return true
                 } catch (e: JSONException) {
-                    Log.d("Status: ", "Failed to add tracks: $e")
+                    Log.d(SPOTIFY_END_POINT, "Failed to add tracks: $e")
                 }
             } else {
-                Log.d("Status: ", "Failed to add tracks")
+                Log.d(SPOTIFY_END_POINT, "Failed to add tracks")
             }
 
             return false
         }
 
 
-        fun getTrackAnaysis(accessToken: String, id: String): TrackInfo? {
+        fun getTrackAnaysis(accessToken: String, id: String, topTrack: Boolean): TrackInfo? {
             var result: TrackInfo? = null
 
             val request = Request.Builder()
@@ -119,16 +124,32 @@ class SpotifyEndpoints {
 
             if (response.isSuccessful) {
                 try {
+                    val jsonObject = JSONObject(response.body!!.string())
+
                     result = TrackInfo(
                         id,
-                        JSONObject(response.body!!.string())
+                        topTrack,
+                        jsonObject.getInt("duration_ms"),
+                        jsonObject.getInt("key"),
+                        jsonObject.getInt("mode"),
+                        jsonObject.getInt("time_signature"),
+                        jsonObject.getDouble("acousticness"),
+                        jsonObject.getDouble("danceability"),
+                        jsonObject.getDouble("energy"),
+                        jsonObject.getDouble("instrumentalness"),
+                        jsonObject.getDouble("liveness"),
+                        jsonObject.getDouble("loudness"),
+                        jsonObject.getDouble("speechiness"),
+                        jsonObject.getDouble("valence"),
+                        jsonObject.getDouble("tempo")
                     )
-                    Log.d("Status: ", "Got new analysis: $result")
+
+                    Log.d(SPOTIFY_END_POINT, "Got new analysis: $result")
                 } catch (e: JSONException) {
-                    Log.d("Status: ", "Failed to parse data: $e")
+                    Log.d(SPOTIFY_END_POINT, "Failed to parse data: $e")
                 }
             } else {
-                Log.d("Status: ", "Failed to fetch data")
+                Log.d(SPOTIFY_END_POINT, "Failed to fetch data")
             }
 
             return result
@@ -161,18 +182,104 @@ class SpotifyEndpoints {
                     result = topTracksUris
 
                 } catch (e: JSONException) {
-                    Log.d("Status: ", "Failed to parse data: $e")
+                    Log.d(SPOTIFY_END_POINT, "Failed to parse data: $e")
                 }
             } else {
-                Log.d("Status: ", "Failed to fetch data")
+                Log.d(SPOTIFY_END_POINT, "Failed to fetch data")
             }
 
             return result
         }
 
-        private fun sendRequestGetResponse(request: Request): Response {
-            return mOkHttpClient.newCall(request).execute()
+        fun unflollowPlaylist(accessToken: String, playlistID: String) : Boolean {
+            val request = Request.Builder()
+                .url("https://api.spotify.com/v1/playlists/${playlistID}/followers")
+                .addHeader("Authorization", "Bearer $accessToken")
+                .delete()
+                .build()
+
+            val response = sendRequestGetResponse(request)
+
+            if (response.isSuccessful) {
+                try {
+                    Log.d(SPOTIFY_END_POINT, "Unfollowed playlist $playlistID")
+                    return true
+                } catch (e: JSONException) {
+                    Log.d(SPOTIFY_END_POINT, "Failed to parse data: $e")
+                }
+            } else {
+                Log.d(SPOTIFY_END_POINT, "Failed to fetch data")
+            }
+
+            return false
         }
 
+        fun getRecommendedTracks(
+            accessToken: String,
+            limit: Int,
+            seedTracks: List<String>,
+            targetSpeechiness: Double,
+            targetAcousticness: Double,
+            targetTempo: Double,
+            timeSignature: Int
+        ): List<String> {
+
+            val seedTracksStr = StringBuilder()
+
+            seedTracks.forEach { seedTracksStr.append("$it,") }
+
+            val url = HttpUrl.Builder()
+                .scheme("https")
+                .host("api.spotify.com")
+                .addPathSegment("v1")
+                .addPathSegment("recommendations")
+                .addQueryParameter("limit", "$limit")
+                .addQueryParameter("seed_tracks", seedTracksStr.toString())
+                .addQueryParameter("target_speechiness", "${round(targetSpeechiness * 100) / 100}")
+                .addQueryParameter("target_acousticness", "${round(targetAcousticness * 100) / 100}")
+                .addQueryParameter("target_tempo", "${round(targetTempo * 100) / 100}")
+                .addQueryParameter("time_signature", "$timeSignature")
+//                .addQueryParameter("target_valence", "$targetValence")
+
+
+            val urlParsed = url.build().toString()
+
+            val request = Request.Builder()
+                .url(urlParsed)
+                .addHeader("Authorization", "Bearer $accessToken")
+                .build()
+
+            val response = sendRequestGetResponse(request)
+
+            if (response.isSuccessful) {
+                try {
+                    Log.d(SPOTIFY_END_POINT, "Got Recommended tracks $url")
+                    val result = ArrayList<String>()
+
+                    val jsonObject = JSONObject(response.body!!.string())
+                    val jsonTracks = jsonObject.getJSONArray("tracks")
+
+                    for(i in 0 until jsonTracks.length()) {
+                        result.add((jsonTracks[i] as JSONObject).getString("id"))
+                    }
+
+                    return result
+                } catch (e: JSONException) {
+                    Log.d(SPOTIFY_END_POINT, "Failed to parse data: $e")
+                }
+            } else {
+                Log.d(SPOTIFY_END_POINT, "Failed to fetch data ${response.body?.string()}")
+            }
+
+            return ArrayList()
+        }
+
+        private fun sendRequestGetResponse(request: Request): Response {
+            val result = OkHttpClient().newCall(request).execute()
+            if(result.code == 429) {
+                Log.e(SPOTIFY_END_POINT, "Too many Spotify requests rate limiting applied")
+            }
+            return result
+        }
     }
 }

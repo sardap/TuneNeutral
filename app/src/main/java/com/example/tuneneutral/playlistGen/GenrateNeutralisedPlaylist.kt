@@ -7,17 +7,11 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.tuneneutral.MiscConsts
 import com.example.tuneneutral.NeutralisePlaylistMessage
 import com.example.tuneneutral.R
+import com.example.tuneneutral.SpotifyEndpoints.Companion.unflollowPlaylist
 import com.example.tuneneutral.SpotifyEndpoints.Companion.addTracksToPlaylist
 import com.example.tuneneutral.SpotifyEndpoints.Companion.createPlaylist
 import com.example.tuneneutral.SpotifyEndpoints.Companion.getCurrentUserID
 import com.example.tuneneutral.database.DatabaseManager
-import com.example.tuneneutral.database.TrackInfo
-import okhttp3.Call
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONException
-import org.json.JSONObject
 import java.text.DateFormat.getDateInstance
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
@@ -27,6 +21,10 @@ import kotlin.math.round
 
 
 class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, private val mCurrentValence: Float, private val mContext: Context) : Runnable {
+
+    companion object {
+        private const val CREATE_PLAYLIST_TAG = "CreatePlaylist"
+    }
 
     override fun run() {
         val tracks = getNTracksWithValence(mCurrentValence)
@@ -47,6 +45,7 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
             if(playlistID != null) {
                 addTracksToPlaylist(mSpotifyAccessToken, playlistID, tracks)
                 notifyComplete(playlistID)
+                unflollowPlaylist(mSpotifyAccessToken, playlistID)
                 return
             }
         }
@@ -136,10 +135,8 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
             existingTracks.remove(existingTracks.first())
         }
 
-        Log.d("Status: ", "Tracks Gotten: $trackCandidates")
-
         val result = getValidTracks(trackCandidates, ArrayList(), valence)
-        Log.d("Status: ", "Neutalize tracks: $result")
+        Log.d(CREATE_PLAYLIST_TAG, "Neutalize tracks: $result")
 
         return result
     }
