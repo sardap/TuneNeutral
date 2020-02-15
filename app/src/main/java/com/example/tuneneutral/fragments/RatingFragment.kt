@@ -144,6 +144,14 @@ class RatingFragment : Fragment() {
 
         val currentValence = mRatingSeekBar.progress / 100f
 
+        if(currentValence in 0.49f..0.51f) {
+            DatabaseManager.instance.addDateInfo(
+                DayRating(Calendar.getInstance().timeInMillis, mRatingSeekBar.progress, "")
+            )
+            changeState(State.Complete)
+            return
+        }
+
         mDialog = Dialog(context!!, android.R.style.ThemeOverlay_Material_Dark)
         mDialog.setContentView(R.layout.creating_playlist_popup)
 
