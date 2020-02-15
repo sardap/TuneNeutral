@@ -53,7 +53,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         val existingTracks = DatabaseManager.instance.getAllTrackIds()
 
         if(
-            pullHistory.count() == mTopTrackPullInfo.count() ||
+            mTopTrackPullInfo.all { pullHistory.containsKey(it.trackSource) } ||
             existingTracks.count() > 100 && ThreadLocalRandom.current().nextInt(2) == 0
         ) {
             pullRecommendedTracks()

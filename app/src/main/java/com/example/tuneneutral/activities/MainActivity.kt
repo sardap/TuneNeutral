@@ -6,9 +6,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.tuneneutral.R
@@ -35,14 +35,25 @@ class MainActivity : AppCompatActivity(),
     }
 
     private class SpotifyLoginDialogViewHolder(view: Dialog) {
-        val mSpotifyLoginButton = view.findViewById<Button>(R.id.spotify_login_button)
+        val spotifyLoginButton = view.findViewById<Button>(R.id.spotify_login_button)
     }
 
-    private var mState =
-        State.ShowingCalander
-    private lateinit var mSpotifyLoginDialog: Dialog
+    private class StatusBarViewHolder(view: View) {
+        val progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
+        val loadingMessage = view.findViewById<TextView>(R.id.loading_message)
+    }
+
+    private class ViewHolder(view: View) {
+        val fragmentContainer = view.findViewById<FrameLayout>(R.id.fragment_container)
+        val statisBarViewHolder = StatusBarViewHolder(view)
+    }
+
+    private var mState = State.ShowingCalander
+    private var mSpotifyLoginDialog: Dialog? = null
+
     private lateinit var mSpotifyLoginDialogViewHolder: SpotifyLoginDialogViewHolder
     private lateinit var mPullSongsThread: Thread
+    private lateinit var mStatusBarFrameLayout: FrameLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,29 +65,9 @@ class MainActivity : AppCompatActivity(),
     override fun onStart() {
         super.onStart()
 
-        mSpotifyLoginDialog = Dialog(this, android.R.style.ThemeOverlay_Material_Light)
-        mSpotifyLoginDialog.setContentView(R.layout.login_to_spotify_dialog)
+        mStatusBarFrameLayout = findViewById(R.id.status_bar)
 
-        val window = mSpotifyLoginDialog.window
-        if(window != null){
-            window.setLayout(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT)
-            window.setGravity(Gravity.BOTTOM)
-        }
-
-        mSpotifyLoginDialog.window?.attributes?.dimAmount = 0.7f
-        mSpotifyLoginDialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-
-        mSpotifyLoginDialogViewHolder =
-            SpotifyLoginDialogViewHolder(
-                mSpotifyLoginDialog
-            )
-
-        mSpotifyLoginDialogViewHolder.mSpotifyLoginButton.setOnClickListener {
-            logIntoSpotify()
-            mSpotifyLoginDialog.dismiss()
-        }
-
-        mSpotifyLoginDialog.setCanceledOnTouchOutside(false)
+        logIntoSpotify()
 
         when(mState) {
             State.ShowingCalander -> changeToCalandarFragment()
@@ -104,6 +95,9 @@ class MainActivity : AppCompatActivity(),
 
                 changeToCalandarFragment()
             } else {
+                initloginWindow()
+                checkSpotifyLogin()
+
                 val toast = Toast.makeText(this, "Unable to Login into Spotify Error:${response.error}", Toast.LENGTH_LONG)
                 toast.setGravity(Gravity.CENTER, 0, 0)
                 toast.show()
@@ -124,11 +118,39 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
+    private fun initloginWindow() {
+
+        val dialog = Dialog(this, android.R.style.ThemeOverlay_Material_Light)
+        dialog.setContentView(R.layout.login_to_spotify_dialog)
+
+        val window = dialog.window
+        if(window != null){
+            window.setLayout(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT)
+            window.setGravity(Gravity.BOTTOM)
+        }
+
+        dialog.window?.attributes?.dimAmount = 0.7f
+        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+
+        mSpotifyLoginDialogViewHolder = SpotifyLoginDialogViewHolder(
+            dialog
+        )
+
+        mSpotifyLoginDialogViewHolder.spotifyLoginButton.setOnClickListener {
+            logIntoSpotify()
+            dialog.dismiss()
+        }
+
+        dialog.setCanceledOnTouchOutside(false)
+
+        mSpotifyLoginDialog = dialog
+    }
+
     private fun checkSpotifyLogin(): Boolean {
-        val timeGotten =
-            SpotifyUserInfo.TimeGotten
+        val timeGotten = SpotifyUserInfo.TimeGotten
+
         if(
-            !mSpotifyLoginDialog.isShowing && SpotifyUserInfo.SpotifyAccessToken == null ||
+            mSpotifyLoginDialog != null && !mSpotifyLoginDialog!!.isShowing && SpotifyUserInfo.SpotifyAccessToken == null ||
             timeGotten != null && timeGotten + 3600000 < Calendar.getInstance().timeInMillis
         ) {
             openSpotifyLoginDialog()
@@ -139,7 +161,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun openSpotifyLoginDialog() {
-        mSpotifyLoginDialog.show()
+        mSpotifyLoginDialog?.show()
     }
 
     private fun getAuthenticationRequest(type: AuthenticationResponse.Type): AuthenticationRequest {

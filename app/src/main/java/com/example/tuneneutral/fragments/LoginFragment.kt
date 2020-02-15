@@ -22,6 +22,20 @@ import com.spotify.sdk.android.authentication.AuthenticationResponse
  * create an instance of this fragment.
  */
 class LoginFragment : Fragment() {
+    companion object {
+        /**
+         * Use this factory method to create a new instance of
+         * this fragment using the provided parameters.
+         *
+         * @param param1 Parameter 1.
+         * @param param2 Parameter 2.
+         * @return A new instance of fragment LoginFragment.
+         */
+        // TODO: Rename and change types and number of parameters
+        @JvmStatic
+        fun newInstance() = LoginFragment().apply {}
+    }
+
     private lateinit var mSpotifyLoginButton: Button
 
     override fun onStart() {
@@ -61,21 +75,5 @@ class LoginFragment : Fragment() {
             SpotifyConstants.AUTH_TOKEN_REQUEST_CODE,
             request
         )
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment LoginFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance() =
-            LoginFragment().apply {
-            }
     }
 }
