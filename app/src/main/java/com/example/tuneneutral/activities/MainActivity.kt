@@ -1,4 +1,4 @@
-package com.example.tuneneutral
+package com.example.tuneneutral.activities
 
 import android.app.ActionBar
 import android.app.Dialog
@@ -11,6 +11,10 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.example.tuneneutral.R
+import com.example.tuneneutral.spotify.SpotifyConstants
+import com.example.tuneneutral.spotify.SpotifyUserInfo
+import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
 import com.example.tuneneutral.fragments.calendar.CalendarFragment
@@ -34,7 +38,8 @@ class MainActivity : AppCompatActivity(),
         val mSpotifyLoginButton = view.findViewById<Button>(R.id.spotify_login_button)
     }
 
-    private var mState = State.ShowingCalander
+    private var mState =
+        State.ShowingCalander
     private lateinit var mSpotifyLoginDialog: Dialog
     private lateinit var mSpotifyLoginDialogViewHolder: SpotifyLoginDialogViewHolder
     private lateinit var mPullSongsThread: Thread
@@ -61,7 +66,10 @@ class MainActivity : AppCompatActivity(),
         mSpotifyLoginDialog.window?.attributes?.dimAmount = 0.7f
         mSpotifyLoginDialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
 
-        mSpotifyLoginDialogViewHolder = SpotifyLoginDialogViewHolder(mSpotifyLoginDialog)
+        mSpotifyLoginDialogViewHolder =
+            SpotifyLoginDialogViewHolder(
+                mSpotifyLoginDialog
+            )
 
         mSpotifyLoginDialogViewHolder.mSpotifyLoginButton.setOnClickListener {
             logIntoSpotify()
@@ -117,7 +125,8 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun checkSpotifyLogin(): Boolean {
-        val timeGotten = SpotifyUserInfo.TimeGotten
+        val timeGotten =
+            SpotifyUserInfo.TimeGotten
         if(
             !mSpotifyLoginDialog.isShowing && SpotifyUserInfo.SpotifyAccessToken == null ||
             timeGotten != null && timeGotten + 3600000 < Calendar.getInstance().timeInMillis
@@ -134,7 +143,10 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun getAuthenticationRequest(type: AuthenticationResponse.Type): AuthenticationRequest {
-        return AuthenticationRequest.Builder(SpotifyConstants.CLIENT_ID, type, SpotifyConstants.REDIRECT_URI)
+        return AuthenticationRequest.Builder(
+            SpotifyConstants.CLIENT_ID, type,
+            SpotifyConstants.REDIRECT_URI
+        )
             .setShowDialog(false)
             .setScopes(arrayOf("user-top-read", "playlist-read-private", "playlist-modify-private", "user-read-private"))
             .build()

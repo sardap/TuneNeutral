@@ -1,9 +1,7 @@
-package com.example.tuneneutral
+package com.example.tuneneutral.spotify
 
 import android.util.Log
 import com.example.tuneneutral.database.TrackInfo
-import com.google.gson.Gson
-import com.google.gson.JsonObject
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -28,7 +26,10 @@ class SpotifyEndpoints {
                 .addHeader("Authorization", "Bearer $accessToken")
                 .build()
 
-            val response = sendRequestGetResponse(request)
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
 
             if (response.isSuccessful) {
                 try {
@@ -63,7 +64,10 @@ class SpotifyEndpoints {
                 .post(requestBody)
                 .build()
 
-            val response = sendRequestGetResponse(request)
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
 
             if (response.isSuccessful) {
                 try {
@@ -95,7 +99,10 @@ class SpotifyEndpoints {
                 .post("".toRequestBody())
                 .build()
 
-            val response = sendRequestGetResponse(request)
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
 
             if (response.isSuccessful) {
                 try {
@@ -120,7 +127,10 @@ class SpotifyEndpoints {
                 .addHeader("Authorization", "Bearer $accessToken")
                 .build()
 
-            val response = sendRequestGetResponse(request)
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
 
             if (response.isSuccessful) {
                 try {
@@ -163,7 +173,10 @@ class SpotifyEndpoints {
                 .addHeader("Authorization", "Bearer $accessToken")
                 .build()
 
-            val response = sendRequestGetResponse(request)
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
 
             if (response.isSuccessful) {
                 try {
@@ -198,7 +211,10 @@ class SpotifyEndpoints {
                 .delete()
                 .build()
 
-            val response = sendRequestGetResponse(request)
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
 
             if (response.isSuccessful) {
                 try {
@@ -249,7 +265,10 @@ class SpotifyEndpoints {
                 .addHeader("Authorization", "Bearer $accessToken")
                 .build()
 
-            val response = sendRequestGetResponse(request)
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
 
             if (response.isSuccessful) {
                 try {

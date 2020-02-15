@@ -1,4 +1,4 @@
-package com.example.tuneneutral
+package com.example.tuneneutral.spotify
 
 import android.content.Context
 import android.content.Intent

@@ -7,10 +7,10 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.tuneneutral.MiscConsts
 import com.example.tuneneutral.NeutralisePlaylistMessage
 import com.example.tuneneutral.R
-import com.example.tuneneutral.SpotifyEndpoints.Companion.unflollowPlaylist
-import com.example.tuneneutral.SpotifyEndpoints.Companion.addTracksToPlaylist
-import com.example.tuneneutral.SpotifyEndpoints.Companion.createPlaylist
-import com.example.tuneneutral.SpotifyEndpoints.Companion.getCurrentUserID
+import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.unflollowPlaylist
+import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.addTracksToPlaylist
+import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.createPlaylist
+import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getCurrentUserID
 import com.example.tuneneutral.database.DatabaseManager
 import java.text.DateFormat.getDateInstance
 import java.util.*

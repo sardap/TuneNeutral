@@ -2,9 +2,9 @@ package com.example.tuneneutral.playlistGen
 
 import android.util.Log
 import com.example.tuneneutral.BuildConfig
-import com.example.tuneneutral.SpotifyEndpoints.Companion.getRecommendedTracks
-import com.example.tuneneutral.SpotifyEndpoints.Companion.getTopTracks
-import com.example.tuneneutral.SpotifyEndpoints.Companion.getTrackAnaysis
+import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getRecommendedTracks
+import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getTopTracks
+import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getTrackAnaysis
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.PullHistory
 import com.example.tuneneutral.database.TrackInfo

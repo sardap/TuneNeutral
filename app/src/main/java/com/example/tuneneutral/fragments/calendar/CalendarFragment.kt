@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 import com.example.tuneneutral.R
-import com.example.tuneneutral.SpotifyUtiltiy
+import com.example.tuneneutral.spotify.SpotifyUtiltiy
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.DayRating

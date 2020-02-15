@@ -22,6 +22,7 @@ import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
 import com.example.tuneneutral.playlistGen.GenrateNeutralisedPlaylist
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.DayRating
+import com.example.tuneneutral.spotify.SpotifyUserInfo
 import java.util.*
 
 

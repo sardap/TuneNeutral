@@ -1,4 +1,4 @@
-package com.example.tuneneutral
+package com.example.tuneneutral.spotify
 
 interface SpotifyLoginListener {
     fun SpotifyLoginComplete()
