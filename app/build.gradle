@@ -9,8 +9,8 @@ android {
         applicationId "com.tuneneutral"
         minSdkVersion 24
         targetSdkVersion 29
-        versionCode 130
-        versionName "inital release 4"
+        versionCode 140
+        versionName "The next one"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
