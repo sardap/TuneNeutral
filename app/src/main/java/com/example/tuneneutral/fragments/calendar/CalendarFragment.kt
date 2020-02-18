@@ -149,6 +149,7 @@ class CalendarFragment : Fragment() {
             val openButton = view.open_button
             val dateBackground = view.date_background
             val dateRatingLine = view.date_rating_line
+            val spotifyPlaylistLine = view.spotify_playlist_line
         }
 
         val dayRatings = DatabaseManager.instance.getDayRatings()
@@ -203,6 +204,8 @@ class CalendarFragment : Fragment() {
                     color = Color.rgb(resultRed, resultGreen, resultBlue)
 
                     if(dayRating.playlistID != "") {
+                        container.spotifyPlaylistLine.visibility = View.VISIBLE
+
                         container.openButton.setOnClickListener {
                             SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, dayRating.playlistID)
                         }

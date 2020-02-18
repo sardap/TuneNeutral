@@ -52,6 +52,16 @@
                 tools:text="100"
                 />
 
+            <View
+                android:id="@+id/spotify_playlist_line"
+                android:layout_width="match_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_height="2dp"
+                android:background="@color/colorSpotifyButton"
+                android:visibility="invisible"
+                />
+
         </LinearLayout>
 
     </RelativeLayout>
