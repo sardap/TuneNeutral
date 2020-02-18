@@ -39,11 +39,7 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     fun addDateInfo(date: DayRating) {
-        val dates = mDb.dayRatings
-
-        assert(!mDb.UserSettings.debugMode && !dates.containsKey(date.timestamp))
-
-        dates[date.timestamp] = date
+        mDb.dayRatings[date.timestamp] = date
         writeDB()
     }
 
