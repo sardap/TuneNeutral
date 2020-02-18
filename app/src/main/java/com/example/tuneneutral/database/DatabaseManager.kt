@@ -3,9 +3,6 @@ package com.example.tuneneutral.database
 import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import org.json.JSONException
-import org.json.JSONObject
 import java.io.*
 import java.lang.Exception
 
@@ -55,6 +52,16 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    fun getUserSettings(): UserSettings {
+        return mDb.UserSettings
+    }
+
+    @Synchronized
+    fun setUserSettings() {
+        writeDB()
+    }
+
+    @Synchronized
     fun deletePullHistroy(key: TrackSources) {
         mDb.pullHistory.remove(key)
 
@@ -64,6 +71,21 @@ class DatabaseManager private constructor() {
     @Synchronized
     fun getDayRatings(): ArrayList<DayRating> {
         return ArrayList(mDb.dayRatings)
+    }
+
+    @Synchronized
+    fun getFirstDayRating() : DayRating {
+        return mDb.dayRatings.first()
+    }
+
+    @Synchronized
+    fun getLastDayRating() : DayRating {
+        return mDb.dayRatings.last()
+    }
+
+    @Synchronized
+    fun hasDayRating(): Boolean {
+        return mDb.dayRatings.count() > 0
     }
 
     @Synchronized
@@ -166,7 +188,7 @@ class DatabaseManager private constructor() {
 
         } catch (e: Exception) {
             Log.e(HOLDER.DATABASE_TAG, "Json file parsing: $e")
-            initaliseDB()
+            initDB()
             loadDB()
         }
     }
@@ -182,12 +204,12 @@ class DatabaseManager private constructor() {
         }
     }
 
-    private fun initaliseDB() {
+    private fun initDB() {
         try {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
 
             outputStreamWriter.write(
-                mGson.toJson(Database(ArrayList(), HashMap(), ArrayList()))
+                mGson.toJson(Database(ArrayList(), HashMap(), ArrayList(), UserSettings(true)))
             )
             outputStreamWriter.close()
         } catch (e: IOException) {

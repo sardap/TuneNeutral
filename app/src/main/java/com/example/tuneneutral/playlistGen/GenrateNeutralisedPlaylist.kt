@@ -12,6 +12,7 @@ import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.addTracksToPla
 import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.createPlaylist
 import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getCurrentUserID
 import com.example.tuneneutral.database.DatabaseManager
+import com.example.tuneneutral.database.DayRating
 import java.text.DateFormat.getDateInstance
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
@@ -20,7 +21,12 @@ import kotlin.collections.HashMap
 import kotlin.math.round
 
 
-class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, private val mCurrentValence: Float, private val mContext: Context) : Runnable {
+class GenrateNeutralisedPlaylist(
+    private val mSpotifyAccessToken: String,
+    private val mCurrentValence: Float,
+    private val mContext: Context,
+    private val mTimeStamp: Long
+) : Runnable {
 
     companion object {
         private const val CREATE_PLAYLIST_TAG = "CreatePlaylist"
@@ -28,6 +34,8 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
 
     override fun run() {
         val tracks = getNTracksWithValence(mCurrentValence)
+
+        var playlistID = ""
 
         if(tracks.count() > 0) {
             tracks.reverse()
@@ -40,17 +48,25 @@ class GenrateNeutralisedPlaylist(private val mSpotifyAccessToken: String, privat
 
             val desc = mContext.getString(R.string.playlist_desc, (mCurrentValence * 100).toInt())
 
-            val playlistID = createPlaylist(mSpotifyAccessToken, getCurrentUserID(mSpotifyAccessToken)!!, formattedDate, desc)
-
-            if(playlistID != null) {
-                addTracksToPlaylist(mSpotifyAccessToken, playlistID, tracks)
-                notifyComplete(playlistID)
-                unflollowPlaylist(mSpotifyAccessToken, playlistID)
-                return
+            createPlaylist(mSpotifyAccessToken, getCurrentUserID(mSpotifyAccessToken)!!, formattedDate, desc).apply {
+                if(this != null) {
+                    playlistID = this
+                    addTracksToPlaylist(mSpotifyAccessToken, playlistID, tracks)
+                    notifyComplete(playlistID)
+                    unflollowPlaylist(mSpotifyAccessToken, playlistID)
+                }
             }
         }
 
-        notifyObvs(NeutralisePlaylistMessage.CompleteNoPlaylist)
+        DatabaseManager.instance.addDateInfo(
+            DayRating(
+                mTimeStamp,
+                (mCurrentValence * 100).toInt(),
+                playlistID
+            )
+        )
+
+        notifyObvs(NeutralisePlaylistMessage.Complete)
     }
 
     private fun notifyObvs(message: NeutralisePlaylistMessage) {

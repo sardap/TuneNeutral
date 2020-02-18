@@ -11,11 +11,11 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.*
 import android.widget.Button
+import android.widget.DatePicker
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProviders
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
@@ -23,6 +23,7 @@ import com.example.tuneneutral.playlistGen.GenrateNeutralisedPlaylist
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.DayRating
 import com.example.tuneneutral.spotify.SpotifyUserInfo
+import kotlinx.android.synthetic.main.rating_fragment.view.*
 import java.util.*
 
 
@@ -48,18 +49,21 @@ class RatingFragment : Fragment() {
         val mMessageText = dialog.findViewById<TextView>(R.id.loading_message)
     }
 
+    private class ViewHolder(view: View) {
+        val ratingText: TextView = view.rating_text
+        val ratingSeekBar: SeekBar = view.rating_input_seekbar
+        val neutralisedButton: Button = view.neutralise_button
+        val datePicker: DatePicker = view.debug_date_picker
+    }
+
     private var mState = State.WaitingInput
     private var mListener: OnFragmentInteractionListener? = null
 
-    private lateinit var mViewModel: RatingViewModel
     private lateinit var mReceiver: MyReceiver
-
-    private lateinit var mRatingSeekBar: SeekBar
-    private lateinit var mRatingText: TextView
-    private lateinit var mNeutralisedButton: Button
 
     private lateinit var mDialog: Dialog
     private lateinit var mDialogViewHolder: DialogViewHolder
+    private lateinit var mViewHolder: ViewHolder
 
     private val seekBarChangeListener: OnSeekBarChangeListener = object : OnSeekBarChangeListener {
         override fun onProgressChanged(
@@ -87,21 +91,18 @@ class RatingFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        mViewModel = ViewModelProviders.of(this).get(RatingViewModel::class.java)
     }
 
     override fun onStart() {
         super.onStart()
 
-        mRatingSeekBar = view!!.findViewById(R.id.rating_input_seekbar)
-        mRatingText = view!!.findViewById(R.id.rating_text)
-        mNeutralisedButton = view!!.findViewById(R.id.neutralise_button)
+        mViewHolder = ViewHolder(view!!)
 
-        mRatingSeekBar.setOnSeekBarChangeListener(seekBarChangeListener)
+        mViewHolder.ratingSeekBar.setOnSeekBarChangeListener(seekBarChangeListener)
 
         updateProgressText()
 
-        mNeutralisedButton.setOnClickListener {
+        mViewHolder.neutralisedButton.setOnClickListener {
             neutraliseClicked()
         }
     }
@@ -136,23 +137,15 @@ class RatingFragment : Fragment() {
     }
 
     private fun updateProgressText() {
-        mRatingText.text = getString(R.string.default_rating, mRatingSeekBar.progress)
+        mViewHolder.ratingText.text = getString(R.string.default_rating, mViewHolder.ratingSeekBar.progress)
     }
 
     private fun neutraliseClicked() {
         changeState(State.GenPlaylist)
 
-        val currentValence = mRatingSeekBar.progress / 100f
+        val currentValence = mViewHolder.ratingSeekBar.progress / 100f
 
-        if(currentValence in 0.49f..0.51f) {
-            DatabaseManager.instance.addDateInfo(
-                DayRating(Calendar.getInstance().timeInMillis, mRatingSeekBar.progress, "")
-            )
-            changeState(State.Complete)
-            return
-        }
-
-        mDialog = Dialog(context!!, android.R.style.ThemeOverlay_Material_Dark)
+        mDialog = Dialog(context!!, R.style.AppThemeDarkMode)
         mDialog.setContentView(R.layout.creating_playlist_popup)
 
         val window = mDialog .window
@@ -165,13 +158,22 @@ class RatingFragment : Fragment() {
         mDialog.window?.attributes?.dimAmount = 0.7f
         mDialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
 
+        val timeStamp = if(DatabaseManager.instance.getUserSettings().debugMode) {
+            val date = Calendar.getInstance()
+            date.set(mViewHolder.datePicker.year, mViewHolder.datePicker.month, mViewHolder.datePicker.dayOfMonth)
+            date.timeInMillis
+        } else {
+            Calendar.getInstance().timeInMillis
+        }
+
         mDialogViewHolder = DialogViewHolder(mDialog)
 
         val generateNeutralised =
             GenrateNeutralisedPlaylist(
                 SpotifyUserInfo.SpotifyAccessToken!!,
                 currentValence,
-                context!!
+                context!!,
+                timeStamp
             )
 
         val neutraliseThread = Thread(generateNeutralised)
@@ -188,29 +190,14 @@ class RatingFragment : Fragment() {
                 NeutralisePlaylistMessage.PullingSongs -> R.string.loading_pulling_songs
                 NeutralisePlaylistMessage.Anaylsing -> R.string.loading_anayalsing
                 NeutralisePlaylistMessage.Calcualting -> R.string.loading_calcauting
-                NeutralisePlaylistMessage.CompletePlaylistCreated -> R.string.loading_compelte_playlist
-                NeutralisePlaylistMessage.CompleteNoPlaylist-> R.string.loading_compelte_no_playlist
-                else -> throw RuntimeException()
+                else -> null
             }
 
-            ratingFragment.mDialogViewHolder.mMessageText.text = context.getString(stringId)
+            if(stringId != null) {
+                ratingFragment.mDialogViewHolder.mMessageText.text = context.getString(stringId)
+            }
 
-            if (message == NeutralisePlaylistMessage.CompletePlaylistCreated) {
-                val playlistID = if(message == NeutralisePlaylistMessage.CompletePlaylistCreated) {
-                    intent.getStringExtra(MiscConsts.NEUTRALISE_PLAYLIST_ID)
-                } else {
-                    ""
-                }
-                if (playlistID != null) {
-                    DatabaseManager.instance.addDateInfo(
-                        DayRating(
-                            Calendar.getInstance().timeInMillis,
-                            ratingFragment.mRatingSeekBar.progress,
-                            playlistID
-                        )
-                    )
-                }
-
+            if(message == NeutralisePlaylistMessage.Complete) {
                 ratingFragment.mDialog.dismiss()
                 ratingFragment.changeState(State.Complete)
             }

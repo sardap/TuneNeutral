@@ -15,7 +15,7 @@ class SpotifyUtiltiy {
             )
 
             context.startActivity(intent)
-
         }
+
     }
 }

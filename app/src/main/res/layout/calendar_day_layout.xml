@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_border"
+    android:layout_margin="0.5dp"
+    >
+
+    <RelativeLayout
+        android:id="@+id/date_background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+
+        <Button
+            android:id="@+id/open_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            >
+
+            <TextView
+                android:id="@+id/calendar_day_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textSize="20sp"
+                tools:text="22"
+                />
+
+            <View
+                android:id="@+id/date_rating_line"
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="@color/colorDateViewLineBreak"
+                android:visibility="invisible"
+                />
+
+            <TextView
+                android:id="@+id/rating_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                tools:text="100"
+                />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+</FrameLayout>
