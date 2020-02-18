@@ -183,15 +183,12 @@ class CalendarFragment : Fragment() {
                     container.ratingText.text = rating.toString()
                     container.dateRatingLine.visibility = View.VISIBLE
 
-                    val minColorInt: Int
-                    val maxColorInt: Int
+                    val minColorInt =  context!!.getColor(R.color.colorNothing)
 
-                    if(rating >= 50) {
-                        minColorInt =  context!!.getColor(R.color.colorNothing)
-                        maxColorInt = context!!.getColor(R.color.colorHappy)
+                    val maxColorInt = if(rating >= 50) {
+                        context!!.getColor(R.color.colorHappy)
                     } else {
-                        minColorInt = context!!.getColor(R.color.colorSad)
-                        maxColorInt = context!!.getColor(R.color.colorNothing)
+                        context!!.getColor(R.color.colorSad)
                     }
 
                     val minColor = Color.parseColor(String.format("#%06X", minColorInt))
@@ -215,8 +212,6 @@ class CalendarFragment : Fragment() {
                         container.openButton.setOnClickListener {
                             rateToday()
                         }
-                    } else {
-
                     }
                 }
 
