@@ -44,6 +44,16 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    fun getLastPullTime(): Long? {
+        val result = mDb.pullHistory.maxBy { (_, v) -> v.timestamp }
+
+        if (result != null) {
+            return result.value.timestamp
+        }
+
+        return  null
+    }
+
     fun getPullHistroy() : HashMap<TrackSources, PullHistory> {
         return HashMap(mDb.pullHistory)
     }
@@ -147,6 +157,8 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     private fun loadDB() {
+//        initDB()
+
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)
             val inputStreamReader = InputStreamReader(inputStream)

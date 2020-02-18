@@ -9,6 +9,7 @@ import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.PullHistory
 import com.example.tuneneutral.database.TrackInfo
 import com.example.tuneneutral.database.TrackSources
+import com.example.tuneneutral.utility.DateUtility
 import java.util.*
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.collections.ArrayList
@@ -38,15 +39,6 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
 
     override fun run() {
         val pullHistory = DatabaseManager.instance.getPullHistroy()
-
-        if(
-            !BuildConfig.DEBUG &&
-            pullHistory.count() > 0 &&
-            pullHistory.values.minBy { it.timestamp }!!.timestamp > Calendar.getInstance().timeInMillis - DAY_IN_MILS
-        ) {
-            Log.i(LOGGER_TAG, "Already Pulled songs today!")
-            return
-        }
 
         cleanPullHistory(pullHistory)
 
@@ -85,7 +77,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
 
         pullTrackInfo(newTracks.minus(DatabaseManager.instance.getAllTrackIds()), false)
 
-        DatabaseManager.instance.addPullHistory(TrackSources.RecomendedTracks, PullHistory(Calendar.getInstance().timeInMillis, 0, false))
+        DatabaseManager.instance.addPullHistory(TrackSources.RecomendedTracks, PullHistory(DateUtility.TodayEpoch, 0, false))
     }
 
     private fun pullTopTracks(pullHistory: HashMap<TrackSources, PullHistory>) {
@@ -104,7 +96,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         if(topTracksPullInfoStack.count() == 0) {
             val i = mTopTrackPullInfo.indexOfFirst { !pullHistory.containsKey(it.trackSource) }
             val nextPull = mTopTrackPullInfo[i]
-            PullHistory(Calendar.getInstance().timeInMillis, 0, false).apply {
+            PullHistory(DateUtility.TodayEpoch, 0, false).apply {
                 pullTopTracks(mSpotifyAccessToken, nextPull.timePeriod, this)
                 DatabaseManager.instance.addPullHistory(nextPull.trackSource, this)
             }
@@ -112,7 +104,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
     }
 
     private fun cleanPullHistory(pullHistory: HashMap<TrackSources, PullHistory>) {
-        val currentTime = Calendar.getInstance().timeInMillis
+        val currentTime = DateUtility.TodayEpoch
 
         fun processPull(key: TrackSources, entry: PullHistory, time: Long) {
             if(entry.pullComplete && entry.timestamp < currentTime - time) {
