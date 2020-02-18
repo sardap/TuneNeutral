@@ -3,7 +3,6 @@ package com.example.tuneneutral.fragments.calendar
 import android.content.Context
 import android.graphics.Color
 import android.net.Uri
-import android.opengl.Visibility
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -19,26 +18,23 @@ import androidx.fragment.app.Fragment
 import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
-import com.example.tuneneutral.database.DayRating
 import com.example.tuneneutral.spotify.SpotifyUtiltiy
+import com.example.tuneneutral.utility.DateUtility
 import com.kizitonwose.calendarview.CalendarView
 import com.kizitonwose.calendarview.model.CalendarDay
 import com.kizitonwose.calendarview.model.DayOwner
 import com.kizitonwose.calendarview.model.ScrollMode
 import com.kizitonwose.calendarview.ui.DayBinder
 import com.kizitonwose.calendarview.ui.ViewContainer
+import com.kizitonwose.calendarview.utils.yearMonth
 import kotlinx.android.synthetic.main.calendar_day_layout.view.*
 import kotlinx.android.synthetic.main.fragment_calendar.view.*
 import kotlinx.android.synthetic.main.legend_layout.*
 import kotlinx.android.synthetic.main.month_header.view.month_title
-import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
-import org.threeten.bp.YearMonth
-import org.threeten.bp.ZoneId
+import org.threeten.bp.*
 import org.threeten.bp.temporal.WeekFields
 import java.lang.String
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.abs
 
 
@@ -56,17 +52,17 @@ private const val ARG_DATE = "ARG_DATE"
 class CalendarFragment : Fragment() {
 
     private class ViewHolder(view: View) {
-        val calendarView: CalendarView = view.findViewById(R.id.calendar_view)
-        val monthHeader: TextView = view.month_title
+        val calendarView: CalendarView = view.calendar_view
+        val monthTitle: TextView = view.month_title
+        val yearTitle: TextView = view.year_title
         val rateTodayButton: Button = view.rate_today_button
+        val monthLeftButton: Button = view.month_left_button
+        val monthRightButton: Button = view.month_right_button
     }
 
     private var param1: Long? = null
     private var listener: OnFragmentInteractionListener? = null
-
-//    private lateinit var mRecyclerView: RecyclerView
-//    private lateinit var mViewAdapter: RecyclerView.Adapter<*>
-//    private lateinit var mViewManager: RecyclerView.LayoutManager
+    private var mCurrentDate = DateUtility.now
 
     private lateinit var mViewHolder: ViewHolder
 
@@ -87,28 +83,6 @@ class CalendarFragment : Fragment() {
         mViewHolder.rateTodayButton.setOnClickListener {
             rateToday()
         }
-
-//        mViewAdapter = CalendarListAdatper(mDates,
-//            object : CalendarListAdatper.OnItemClickListener{
-//                override fun onItemClick(pos: Int) {
-//                    SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, mDates[pos].playlistID)
-//                }
-//            },
-//            object : CalendarListAdatper.OnItemClickListener {
-//                override fun onItemClick(pos: Int) {
-//                    if(listener != null) {
-//                        listener?.onFragmentInteraction(Uris.OPEN_RATING_FRAGMENT)
-//                    }
-//                }
-//            }
-//        )
-//        mViewManager = LinearLayoutManager(activity)
-//
-//        mRecyclerView.apply {
-//            layoutManager = mViewManager
-//
-//            adapter = mViewAdapter
-//        }
     }
 
     override fun onCreateView(
@@ -134,13 +108,14 @@ class CalendarFragment : Fragment() {
     }
 
     private fun initCalendarView() {
+        mViewHolder.monthLeftButton.setOnClickListener {
+            mCurrentDate = mCurrentDate.minusMonths(1)
+            setMonth(mCurrentDate)
+        }
 
-        val daysOfWeek = arrayOf("mon", "tue", "wed", "thu", "fri", "sat", "sun")
-        legend_layout.children.forEachIndexed { index, view ->
-            (view as TextView).apply {
-                text = daysOfWeek[index]
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-            }
+        mViewHolder.monthRightButton.setOnClickListener {
+            mCurrentDate = mCurrentDate.plusMonths(1)
+            setMonth(mCurrentDate)
         }
 
         class DayViewContainer(view: View) : ViewContainer(view) {
@@ -150,18 +125,6 @@ class CalendarFragment : Fragment() {
             val dateBackground = view.date_background
             val dateRatingLine = view.date_rating_line
             val spotifyPlaylistLine = view.spotify_playlist_line
-        }
-
-        val dayRatings = DatabaseManager.instance.getDayRatings()
-        val dayRatingsWithLocalDate = ArrayList<Pair<LocalDate, DayRating>>()
-
-        for (day in dayRatings) {
-            dayRatingsWithLocalDate.add(
-                Pair(
-                    Instant.ofEpochMilli(day.timestamp).atZone(ZoneId.systemDefault()).toLocalDate(),
-                    day
-                )
-            )
         }
 
         mViewHolder.calendarView.dayBinder = object : DayBinder<DayViewContainer> {
@@ -175,55 +138,52 @@ class CalendarFragment : Fragment() {
 
                 var color: Int? = null
 
-                // Set data
-                val dayRating = DatabaseManager.instance.getDayRating(day.date.toEpochDay())
+                if(day.owner == DayOwner.THIS_MONTH) {
+                    // Set data
+                    val dayRating = DatabaseManager.instance.getDayRating(day.date.toEpochDay())
 
-                if(dayRating != null) {
-                    val rating = dayRating.rating
+                    if(dayRating != null) {
+                        val rating = dayRating.rating
 
-                    container.ratingText.text = rating.toString()
-                    container.dateRatingLine.visibility = View.VISIBLE
+                        container.ratingText.text = rating.toString()
+                        container.dateRatingLine.visibility = View.VISIBLE
 
-                    val minColorInt =  context!!.getColor(R.color.colorNothing)
+                        val minColorInt =  context!!.getColor(R.color.colorNothing)
 
-                    val maxColorInt = if(rating >= 50) {
-                        context!!.getColor(R.color.colorHappy)
-                    } else {
-                        context!!.getColor(R.color.colorSad)
-                    }
+                        val maxColorInt = if(rating >= 50) {
+                            context!!.getColor(R.color.colorHappy)
+                        } else {
+                            context!!.getColor(R.color.colorSad)
+                        }
 
-                    val minColor = Color.parseColor(String.format("#%06X", minColorInt))
-                    val maxColor = Color.parseColor(String.format("#%06X", maxColorInt))
+                        val minColor = Color.parseColor(String.format("#%06X", minColorInt))
+                        val maxColor = Color.parseColor(String.format("#%06X", maxColorInt))
 
-                    val percent = abs(0.5f - (rating / 100f)) / 0.5f
+                        val percent = abs(0.5f - (rating / 100f)) / 0.5f
 
-                    val resultRed = (minColor.red + percent * (maxColor.red - minColor.red)).toInt()
-                    val resultGreen = (minColor.green + percent * (maxColor.green - minColor.green)).toInt()
-                    val resultBlue = (minColor.blue + percent * (maxColor.blue - minColor.blue)).toInt()
+                        val resultRed = (minColor.red + percent * (maxColor.red - minColor.red)).toInt()
+                        val resultGreen = (minColor.green + percent * (maxColor.green - minColor.green)).toInt()
+                        val resultBlue = (minColor.blue + percent * (maxColor.blue - minColor.blue)).toInt()
 
-                    color = Color.rgb(resultRed, resultGreen, resultBlue)
+                        color = Color.rgb(resultRed, resultGreen, resultBlue)
 
-                    if(dayRating.playlistID != "") {
-                        container.spotifyPlaylistLine.visibility = View.VISIBLE
+                        if(dayRating.playlistID != "") {
+                            container.spotifyPlaylistLine.visibility = View.VISIBLE
 
-                        container.openButton.setOnClickListener {
-                            SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, dayRating.playlistID)
+                            container.openButton.setOnClickListener {
+                                SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, dayRating.playlistID)
+                            }
                         }
                     }
-                } else {
-                    if(day.date == LocalDate.now()) {
+
+                    if(day.date == DateUtility.now) {
                         container.openButton.setOnClickListener {
                             rateToday()
                         }
+
+                        container.dateBackground.background = context!!.getDrawable(R.drawable.today_date_border)
                     }
-                }
-
-                if(day.date == LocalDate.now()) {
-                    container.dateBackground.background =
-                        context!!.getDrawable(R.drawable.today_date_border)
-                }
-
-                if(day.owner != DayOwner.THIS_MONTH) {
+                } else {
                     color = context!!.getColor(R.color.colorDayTextNotActive)
                 }
 
@@ -234,9 +194,16 @@ class CalendarFragment : Fragment() {
             }
         }
 
-        val currentMonth = LocalDate.now()
 
-        val textID = when(currentMonth.month.value) {
+        mViewHolder.calendarView.scrollMode = ScrollMode.PAGED
+        mViewHolder.calendarView.dayHeight = 250
+
+        setMonth(mCurrentDate)
+    }
+
+    private fun setMonth(date: LocalDate) {
+
+        val textID = when(date.month.value) {
             1 -> R.string.month_jan
             2 -> R.string.month_feb
             3 -> R.string.month_mar
@@ -252,15 +219,20 @@ class CalendarFragment : Fragment() {
             else -> throw Exception()
         }
 
-        mViewHolder.monthHeader.text  = getString(R.string.date_title, getString(textID), YearMonth.now().year.toString())
-
+        mViewHolder.monthTitle.text  = getString(textID)
+        mViewHolder.yearTitle.text = date.year.toString()
 
         val firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
-        mViewHolder.calendarView.setup(YearMonth.now(), YearMonth.now(), firstDayOfWeek)
 
-        mViewHolder.calendarView.scrollMode = ScrollMode.PAGED
-        mViewHolder.calendarView.scrollToDate(LocalDate.now())
-        mViewHolder.calendarView.dayHeight = 250
+        val daysOfWeek = arrayOf("sun", "mon", "tue", "wed", "thu", "fri", "sat")
+        legend_layout.children.forEachIndexed { index, view ->
+            (view as TextView).apply {
+                text = daysOfWeek[index]
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            }
+        }
+
+        mViewHolder.calendarView.setup(date.yearMonth, date.yearMonth, firstDayOfWeek)
     }
 
     private fun rateToday() {

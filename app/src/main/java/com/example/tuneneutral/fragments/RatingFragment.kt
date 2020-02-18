@@ -161,7 +161,7 @@ class RatingFragment : Fragment() {
         val timeStamp = if(DatabaseManager.instance.getUserSettings().debugMode) {
             LocalDate.of(mViewHolder.datePicker.year, mViewHolder.datePicker.month + 1, mViewHolder.datePicker.dayOfMonth).toEpochDay()
         } else {
-            DateUtility.TodayEpoch
+            DateUtility.todayEpoch
         }
 
         mDialogViewHolder = DialogViewHolder(mDialog)

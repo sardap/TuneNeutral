@@ -9,16 +9,68 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        >
 
-        <TextView
-            android:id="@+id/month_title"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="40sp"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:text="@string/date_title"
-            />
+            >
+
+            <Button
+                android:id="@+id/month_left_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="20sp"
+                android:paddingBottom="20sp"
+                android:orientation="vertical"
+                >
+
+                <TextView
+                    android:id="@+id/month_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="30sp"
+                    android:gravity="center"
+                    tools:text="January"
+                    />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_margin="5sp"
+                    android:layout_height="1dp"
+                    android:background="@color/colorAccent"
+                    />
+
+                <TextView
+                    android:id="@+id/year_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="25sp"
+                    android:layout_gravity="center"
+                    tools:text="2000"
+                    />
+
+            </LinearLayout>
+
+
+
+            <Button
+                android:id="@+id/month_right_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+        </LinearLayout>
+
+
 
         <include layout="@layout/legend_layout" />
 

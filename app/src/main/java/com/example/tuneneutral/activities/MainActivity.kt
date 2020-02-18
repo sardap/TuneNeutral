@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity(),
 
                 val lastPull = DatabaseManager.instance.getLastPullTime()
 
-                if(lastPull == null || lastPull < DateUtility.TodayEpoch) {
+                if(lastPull == null || lastPull < DateUtility.todayEpoch) {
                     Thread(PullNewTracks(response.accessToken)).start()
                 }
 

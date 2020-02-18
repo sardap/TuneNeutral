@@ -4,7 +4,10 @@ import org.threeten.bp.LocalDate
 
 class DateUtility {
     companion object {
-        val TodayEpoch: Long
-            get() = LocalDate.now().toEpochDay()
+        val todayEpoch: Long
+            get() = now.toEpochDay()
+
+        val now: LocalDate
+            get() = LocalDate.now()
     }
 }

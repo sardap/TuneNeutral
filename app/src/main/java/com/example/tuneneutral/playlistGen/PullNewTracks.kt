@@ -1,7 +1,6 @@
 package com.example.tuneneutral.playlistGen
 
 import android.util.Log
-import com.example.tuneneutral.BuildConfig
 import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getRecommendedTracks
 import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getTopTracks
 import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getTrackAnaysis
@@ -77,7 +76,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
 
         pullTrackInfo(newTracks.minus(DatabaseManager.instance.getAllTrackIds()), false)
 
-        DatabaseManager.instance.addPullHistory(TrackSources.RecomendedTracks, PullHistory(DateUtility.TodayEpoch, 0, false))
+        DatabaseManager.instance.addPullHistory(TrackSources.RecomendedTracks, PullHistory(DateUtility.todayEpoch, 0, false))
     }
 
     private fun pullTopTracks(pullHistory: HashMap<TrackSources, PullHistory>) {
@@ -96,7 +95,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         if(topTracksPullInfoStack.count() == 0) {
             val i = mTopTrackPullInfo.indexOfFirst { !pullHistory.containsKey(it.trackSource) }
             val nextPull = mTopTrackPullInfo[i]
-            PullHistory(DateUtility.TodayEpoch, 0, false).apply {
+            PullHistory(DateUtility.todayEpoch, 0, false).apply {
                 pullTopTracks(mSpotifyAccessToken, nextPull.timePeriod, this)
                 DatabaseManager.instance.addPullHistory(nextPull.trackSource, this)
             }
@@ -104,7 +103,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
     }
 
     private fun cleanPullHistory(pullHistory: HashMap<TrackSources, PullHistory>) {
-        val currentTime = DateUtility.TodayEpoch
+        val currentTime = DateUtility.todayEpoch
 
         fun processPull(key: TrackSources, entry: PullHistory, time: Long) {
             if(entry.pullComplete && entry.timestamp < currentTime - time) {
