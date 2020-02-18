@@ -24,6 +24,8 @@ import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.DayRating
 import com.example.tuneneutral.spotify.SpotifyUserInfo
 import kotlinx.android.synthetic.main.rating_fragment.view.*
+import org.threeten.bp.LocalDate
+import org.threeten.bp.LocalDateTime
 import java.util.*
 
 
@@ -159,11 +161,9 @@ class RatingFragment : Fragment() {
         mDialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
 
         val timeStamp = if(DatabaseManager.instance.getUserSettings().debugMode) {
-            val date = Calendar.getInstance()
-            date.set(mViewHolder.datePicker.year, mViewHolder.datePicker.month, mViewHolder.datePicker.dayOfMonth)
-            date.timeInMillis
+            LocalDate.of(mViewHolder.datePicker.year, mViewHolder.datePicker.month + 1, mViewHolder.datePicker.dayOfMonth).toEpochDay()
         } else {
-            Calendar.getInstance().timeInMillis
+            LocalDate.now().toEpochDay()
         }
 
         mDialogViewHolder = DialogViewHolder(mDialog)

@@ -68,7 +68,6 @@ class CalendarFragment : Fragment() {
 //    private lateinit var mViewAdapter: RecyclerView.Adapter<*>
 //    private lateinit var mViewManager: RecyclerView.LayoutManager
 
-    private lateinit var mDates : ArrayList<DayRating>
     private lateinit var mViewHolder: ViewHolder
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,11 +80,6 @@ class CalendarFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        mDates = DatabaseManager.instance.getDayRatings()
-        mDates.reverse()
-        mDates.add(0, DayRating(Calendar.getInstance().timeInMillis, -1, ""))
-
-//        mRecyclerView = view!!.findViewById(R.id.date_list)
         mViewHolder = ViewHolder(view!!)
 
         initCalendarView()
@@ -181,10 +175,10 @@ class CalendarFragment : Fragment() {
                 var color: Int? = null
 
                 // Set data
-                val dayRating = dayRatingsWithLocalDate.find { it.first == day.date }
+                val dayRating = DatabaseManager.instance.getDayRating(day.date.toEpochDay())
 
                 if(dayRating != null) {
-                    val rating = dayRating.second.rating
+                    val rating = dayRating.rating
 
                     container.ratingText.text = rating.toString()
                     container.dateRatingLine.visibility = View.VISIBLE
@@ -211,9 +205,9 @@ class CalendarFragment : Fragment() {
 
                     color = Color.rgb(resultRed, resultGreen, resultBlue)
 
-                    if(dayRating.second.playlistID != "") {
+                    if(dayRating.playlistID != "") {
                         container.openButton.setOnClickListener {
-                            SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, dayRating.second.playlistID)
+                            SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, dayRating.playlistID)
                         }
                     }
                 } else {
