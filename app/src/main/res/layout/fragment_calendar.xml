@@ -21,8 +21,10 @@
 
             <Button
                 android:id="@+id/month_left_button"
-                android:layout_width="wrap_content"
+                android:layout_width="50dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="20dp"
+                android:background="@drawable/ic_keyboard_arrow_left_24px"
                 />
 
             <LinearLayout
@@ -39,7 +41,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="30sp"
                     android:gravity="center"
-                    tools:text="January"
+                    tools:text="February"
                     />
 
                 <View
@@ -60,13 +62,12 @@
 
             </LinearLayout>
 
-
-
             <Button
                 android:id="@+id/month_right_button"
-                android:layout_width="wrap_content"
+                android:layout_width="50dp"
                 android:layout_height="wrap_content"
-                />
+                android:layout_marginStart="20dp"
+                android:background="@drawable/ic_keyboard_arrow_right_24px" />
 
         </LinearLayout>
 
@@ -74,13 +75,31 @@
 
         <include layout="@layout/legend_layout" />
 
-        <com.kizitonwose.calendarview.CalendarView
-            android:layout_marginLeft="10sp"
-            android:layout_marginRight="10sp"
-            android:id="@+id/calendar_view"
-            android:layout_width="match_parent"
+        <RelativeLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:cv_dayViewResource="@layout/calendar_day_layout" />
+            >
+
+            <com.kizitonwose.calendarview.CalendarView
+                android:layout_marginLeft="10sp"
+                android:layout_marginRight="10sp"
+                android:id="@+id/calendar_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cv_dayViewResource="@layout/calendar_day_layout"
+                />
+            
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                android:layout_width="300dp"
+                android:layout_height="300dp"
+                android:layout_centerInParent="true"
+                android:visibility="gone"
+                />
+
+        </RelativeLayout>
+
+
 
         <Button
             android:id="@+id/rate_today_button"

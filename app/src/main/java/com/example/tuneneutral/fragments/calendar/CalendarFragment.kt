@@ -2,6 +2,7 @@ package com.example.tuneneutral.fragments.calendar
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
@@ -9,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
@@ -31,7 +33,7 @@ import kotlinx.android.synthetic.main.calendar_day_layout.view.*
 import kotlinx.android.synthetic.main.fragment_calendar.view.*
 import kotlinx.android.synthetic.main.legend_layout.*
 import kotlinx.android.synthetic.main.month_header.view.month_title
-import org.threeten.bp.*
+import org.threeten.bp.LocalDate
 import org.threeten.bp.temporal.WeekFields
 import java.lang.String
 import java.util.*
@@ -58,6 +60,7 @@ class CalendarFragment : Fragment() {
         val rateTodayButton: Button = view.rate_today_button
         val monthLeftButton: Button = view.month_left_button
         val monthRightButton: Button = view.month_right_button
+        val progressBar: ProgressBar = view.progress_bar
     }
 
     private var param1: Long? = null
@@ -108,6 +111,16 @@ class CalendarFragment : Fragment() {
     }
 
     private fun initCalendarView() {
+        fun startLoading() {
+            mViewHolder.calendarView.visibility = View.GONE
+            mViewHolder.progressBar.visibility = View.VISIBLE
+        }
+
+        fun finishLoading() {
+            mViewHolder.calendarView.visibility = View.VISIBLE
+            mViewHolder.progressBar.visibility = View.GONE
+        }
+
         mViewHolder.monthLeftButton.setOnClickListener {
             mCurrentDate = mCurrentDate.minusMonths(1)
             setMonth(mCurrentDate)
@@ -127,16 +140,27 @@ class CalendarFragment : Fragment() {
             val spotifyPlaylistLine = view.spotify_playlist_line
         }
 
+        val minColorInt =  context!!.getColor(R.color.colorNothing)
+        val minColor = Color.parseColor(String.format("#%06X", minColorInt))
+
         mViewHolder.calendarView.dayBinder = object : DayBinder<DayViewContainer> {
             // Called only when a new container is needed.
             override fun create(view: View) = DayViewContainer(view)
 
             // Called every time we need to reuse a container.
             override fun bind(container: DayViewContainer, day: CalendarDay) {
+
+                fun resetDayVisibility() {
+                    container.dateRatingLine.visibility = View.INVISIBLE
+                    container.ratingText.visibility = View.INVISIBLE
+                    container.spotifyPlaylistLine.visibility = View.INVISIBLE
+                }
+
+                val color: Int
+                val border: Drawable
+
                 // Set date
                 container.dateText.text = day.date.dayOfMonth.toString()
-
-                var color: Int? = null
 
                 if(day.owner == DayOwner.THIS_MONTH) {
                     // Set data
@@ -146,9 +170,9 @@ class CalendarFragment : Fragment() {
                         val rating = dayRating.rating
 
                         container.ratingText.text = rating.toString()
-                        container.dateRatingLine.visibility = View.VISIBLE
+                        container.ratingText.visibility = View.VISIBLE
 
-                        val minColorInt =  context!!.getColor(R.color.colorNothing)
+                        container.dateRatingLine.visibility = View.VISIBLE
 
                         val maxColorInt = if(rating >= 50) {
                             context!!.getColor(R.color.colorHappy)
@@ -156,7 +180,6 @@ class CalendarFragment : Fragment() {
                             context!!.getColor(R.color.colorSad)
                         }
 
-                        val minColor = Color.parseColor(String.format("#%06X", minColorInt))
                         val maxColor = Color.parseColor(String.format("#%06X", maxColorInt))
 
                         val percent = abs(0.5f - (rating / 100f)) / 0.5f
@@ -174,6 +197,9 @@ class CalendarFragment : Fragment() {
                                 SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, dayRating.playlistID)
                             }
                         }
+                    } else {
+                        resetDayVisibility()
+                        color = context!!.getColor(R.color.colorDeufaltText)
                     }
 
                     if(day.date == DateUtility.now) {
@@ -181,16 +207,28 @@ class CalendarFragment : Fragment() {
                             rateToday()
                         }
 
-                        container.dateBackground.background = context!!.getDrawable(R.drawable.today_date_border)
+                        border = context!!.getDrawable(R.drawable.today_date_border)!!
+                    } else {
+                        border = context!!.getDrawable(R.drawable.this_month_background_border)!!
                     }
+
+                    val end = day.date.withDayOfMonth(day.date.lengthOfMonth())
+                    if(day.date == end) {
+                        finishLoading()
+                    }
+
                 } else {
                     color = context!!.getColor(R.color.colorDayTextNotActive)
+
+                    border = context!!.getDrawable(R.drawable.other_month_background_border)!!
+
+
+                    resetDayVisibility()
                 }
 
-                if(color != null) {
-                    container.dateText.setTextColor(color)
-                    container.ratingText.setTextColor(color)
-                }
+                container.dateText.setTextColor(color)
+                container.ratingText.setTextColor(color)
+                container.dateBackground.background = border
             }
         }
 
