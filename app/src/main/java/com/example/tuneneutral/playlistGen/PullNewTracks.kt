@@ -23,10 +23,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
     private class TrackSource(val trackSource: TrackSources, val timePeriod: SpotifyTimeRange)
 
     private companion object {
-        const val MAX_SHORT_LIST = 200
-        const val MIN_IN_MILS = 60000
         const val WEEK_IN_MILS = 604800000L
-        const val DAY_IN_MILS = 86400000L
         const val LOGGER_TAG = "PullTracks"
     }
 
@@ -53,6 +50,10 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         }
 
         DatabaseManager.instance.commitChanges()
+
+        if(DatabaseManager.instance.getAllTracks().count() < 20) {
+            run()
+        }
     }
 
     private fun pullRecommendedTracks() {
