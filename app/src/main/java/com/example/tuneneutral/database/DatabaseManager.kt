@@ -3,8 +3,9 @@ package com.example.tuneneutral.database
 import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import java.io.*
-import java.lang.Exception
+import java.lang.RuntimeException
 
 
 class DatabaseManager private constructor() {
@@ -38,15 +39,21 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     fun addDateInfo(date: DayRating) {
-        val dates = mDb.dayRatings
-
-        assert(dates.count() > 0 && (dates[dates.count() - 1].timestamp < date.timestamp))
-
-        dates.add(date)
+        mDb.dayRatings[date.timestamp] = date
         writeDB()
     }
 
     @Synchronized
+    fun getLastPullTime(): Long? {
+        val result = mDb.pullHistory.maxBy { (_, v) -> v.timestamp }
+
+        if (result != null) {
+            return result.value.timestamp
+        }
+
+        return  null
+    }
+
     fun getPullHistroy() : HashMap<TrackSources, PullHistory> {
         return HashMap(mDb.pullHistory)
     }
@@ -69,38 +76,18 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    fun getDayRatings(): ArrayList<DayRating> {
-        return ArrayList(mDb.dayRatings)
+    fun getDayRatings(): MutableCollection<DayRating> {
+        return mDb.dayRatings.values
     }
 
     @Synchronized
-    fun getFirstDayRating() : DayRating {
-        return mDb.dayRatings.first()
-    }
-
-    @Synchronized
-    fun getLastDayRating() : DayRating {
-        return mDb.dayRatings.last()
+    fun getDayRating(date: Long): DayRating? {
+        return mDb.dayRatings[date]
     }
 
     @Synchronized
     fun hasDayRating(): Boolean {
         return mDb.dayRatings.count() > 0
-    }
-
-    @Synchronized
-    fun getDatesInRange(startTimeStamp: Long, endTimeStamp: Long): ArrayList<DayRating> {
-        val dates = mDb.dayRatings
-        val result = ArrayList<DayRating>()
-
-        for (i in 0 until dates.count()) {
-            val timestamp = dates[i].timestamp
-            if(timestamp in startTimeStamp..endTimeStamp) {
-                result.add(dates[i])
-            }
-        }
-
-        return result
     }
 
     @Synchronized
@@ -170,6 +157,8 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     private fun loadDB() {
+//        initDB()
+
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)
             val inputStreamReader = InputStreamReader(inputStream)
@@ -186,7 +175,7 @@ class DatabaseManager private constructor() {
 
             mDb = mGson.fromJson(jsonStr, Database::class.java)
 
-        } catch (e: Exception) {
+        } catch (e: JsonSyntaxException) {
             Log.e(HOLDER.DATABASE_TAG, "Json file parsing: $e")
             initDB()
             loadDB()
@@ -209,7 +198,7 @@ class DatabaseManager private constructor() {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
 
             outputStreamWriter.write(
-                mGson.toJson(Database(ArrayList(), HashMap(), ArrayList(), UserSettings(true)))
+                mGson.toJson(Database(HashMap(), HashMap(), ArrayList(), UserSettings(true)))
             )
             outputStreamWriter.close()
         } catch (e: IOException) {
