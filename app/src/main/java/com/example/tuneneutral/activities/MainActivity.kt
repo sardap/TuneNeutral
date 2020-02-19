@@ -5,9 +5,6 @@ import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.transition.Fade
-import android.transition.TransitionInflater
-import android.transition.TransitionSet
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -24,6 +21,7 @@ import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import com.example.tuneneutral.playlistGen.PullNewTracks
 import com.example.tuneneutral.spotify.SpotifyConstants
 import com.example.tuneneutral.spotify.SpotifyUserInfo
+import com.example.tuneneutral.utility.DateUtility
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
@@ -61,7 +59,6 @@ class MainActivity : AppCompatActivity(),
     private var mSpotifyLoginDialog: Dialog? = null
 
     private lateinit var mSpotifyLoginDialogViewHolder: SpotifyLoginDialogViewHolder
-    private lateinit var mPullSongsThread: Thread
     private lateinit var mStatusBarFrameLayout: FrameLayout
     private lateinit var mFragmentManager: FragmentManager
 
@@ -102,8 +99,12 @@ class MainActivity : AppCompatActivity(),
                 SpotifyUserInfo.SpotifyAccessToken = response.accessToken
                 SpotifyUserInfo.TimeGotten = Calendar.getInstance().timeInMillis
 
-                mPullSongsThread = Thread(PullNewTracks(SpotifyUserInfo.SpotifyAccessToken!!))
-                mPullSongsThread.start()
+                val lastPull = DatabaseManager.instance.getLastPullTime()
+
+                if(lastPull == null || lastPull < DateUtility.todayEpoch) {
+                    Thread(PullNewTracks(response.accessToken)).start()
+                }
+
 
             } else {
                 initloginWindow()

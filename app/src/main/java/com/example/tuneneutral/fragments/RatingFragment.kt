@@ -21,10 +21,10 @@ import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
 import com.example.tuneneutral.playlistGen.GenrateNeutralisedPlaylist
 import com.example.tuneneutral.database.DatabaseManager
-import com.example.tuneneutral.database.DayRating
 import com.example.tuneneutral.spotify.SpotifyUserInfo
+import com.example.tuneneutral.utility.DateUtility
 import kotlinx.android.synthetic.main.rating_fragment.view.*
-import java.util.*
+import org.threeten.bp.LocalDate
 
 
 class RatingFragment : Fragment() {
@@ -159,11 +159,9 @@ class RatingFragment : Fragment() {
         mDialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
 
         val timeStamp = if(DatabaseManager.instance.getUserSettings().debugMode) {
-            val date = Calendar.getInstance()
-            date.set(mViewHolder.datePicker.year, mViewHolder.datePicker.month, mViewHolder.datePicker.dayOfMonth)
-            date.timeInMillis
+            LocalDate.of(mViewHolder.datePicker.year, mViewHolder.datePicker.month + 1, mViewHolder.datePicker.dayOfMonth).toEpochDay()
         } else {
-            Calendar.getInstance().timeInMillis
+            DateUtility.todayEpoch
         }
 
         mDialogViewHolder = DialogViewHolder(mDialog)
