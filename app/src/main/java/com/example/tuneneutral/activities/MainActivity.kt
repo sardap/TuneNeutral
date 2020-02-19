@@ -100,7 +100,7 @@ class MainActivity : AppCompatActivity(),
 
                 val lastPull = DatabaseManager.instance.getLastPullTime()
 
-                if(lastPull == null || lastPull < DateUtility.todayEpoch) {
+                if(DatabaseManager.instance.getAllTracks().count() < 20 || lastPull == null || lastPull < DateUtility.todayEpoch) {
                     Thread(PullNewTracks(response.accessToken)).start()
                 }
 
@@ -150,6 +150,10 @@ class MainActivity : AppCompatActivity(),
                 item.isChecked = toggleDebug()
                 true
             }
+            R.id.clear_database -> {
+                clearDatabase()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -159,6 +163,12 @@ class MainActivity : AppCompatActivity(),
         userSettings.debugMode = !userSettings.debugMode
         DatabaseManager.instance.setUserSettings()
         return userSettings.debugMode
+    }
+
+    private fun clearDatabase() {
+        DatabaseManager.instance.clearDatabase()
+        finish()
+        startActivity(intent)
     }
 
     private fun initloginWindow() {

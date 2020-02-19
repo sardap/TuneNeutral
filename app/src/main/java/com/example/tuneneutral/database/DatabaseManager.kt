@@ -156,9 +156,13 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    private fun loadDB() {
-//        initDB()
+    fun clearDatabase() {
+        initDB()
+        loadDB()
+    }
 
+    @Synchronized
+    private fun loadDB() {
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)
             val inputStreamReader = InputStreamReader(inputStream)
