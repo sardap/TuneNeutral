@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity(),
                 val lastPull = DatabaseManager.instance.getLastPullTime()
 
                 if(DatabaseManager.instance.getAllTracks().count() < 20 || lastPull == null || lastPull < DateUtility.todayEpoch) {
-                    Thread(PullNewTracks(response.accessToken)).start()
+                    pullSongs()
                 }
 
 
@@ -154,6 +154,10 @@ class MainActivity : AppCompatActivity(),
                 clearDatabase()
                 true
             }
+            R.id.pull_songs -> {
+                pullSongs()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -169,6 +173,16 @@ class MainActivity : AppCompatActivity(),
         DatabaseManager.instance.clearDatabase()
         finish()
         startActivity(intent)
+    }
+
+    private fun pullSongs() {
+        val accessToken = SpotifyUserInfo.SpotifyAccessToken
+
+        assert(accessToken != null)
+
+        if(accessToken != null) {
+            Thread(PullNewTracks(accessToken)).start()
+        }
     }
 
     private fun initloginWindow() {

@@ -32,6 +32,12 @@
         </menu>
     </item>
 
+    <item
+        android:id="@+id/pull_songs"
+        android:title="@string/menu_title_pull_songs"
+        android:icon="@drawable/ic_audiotrack_24px"
+        />
+
 
 
 </menu>

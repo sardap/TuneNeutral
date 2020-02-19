@@ -39,6 +39,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         cleanPullHistory(pullHistory)
 
         val existingTracks = DatabaseManager.instance.getAllTrackIds()
+        val prePullSongs = existingTracks.count()
 
         if(
             mTopTrackPullInfo.all { pullHistory.containsKey(it.trackSource) } ||
@@ -51,7 +52,8 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
 
         DatabaseManager.instance.commitChanges()
 
-        if(DatabaseManager.instance.getAllTracks().count() < 20) {
+        val postPullCount = DatabaseManager.instance.getAllTracks().count()
+        if(postPullCount < 20 || prePullSongs in postPullCount..postPullCount + 4) {
             run()
         }
     }

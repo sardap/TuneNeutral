@@ -53,4 +53,5 @@
     <string name="menu_title_debug">Enable Debug</string>
     <string name="menu_title_database">Database</string>
     <string name="menu_title_clear_database">Clear Database</string>
+    <string name="menu_title_pull_songs">Pull Songs</string>
 </resources>
