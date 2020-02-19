@@ -4,7 +4,7 @@
     <color name="colorPrimaryDark">#a92b29</color>
     <color name="colorAccent">#33b9b9</color>
 
-    <color name="colorToday">#79cf75</color>
+    <color name="colorToday">@color/colorAccent</color>
     <color name="colorThisMonth">#000000</color>
     <color name="colorOtherMonth">#707070</color>
 

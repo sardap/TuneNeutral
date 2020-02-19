@@ -207,7 +207,7 @@ class CalendarFragment : Fragment() {
                             rateToday()
                         }
 
-                        border = context!!.getDrawable(R.drawable.today_date_border)!!
+                        border = context!!.getDrawable(R.drawable.today_background_border)!!
                     } else {
                         border = context!!.getDrawable(R.drawable.this_month_background_border)!!
                     }
