@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    android:id="@+id/date_background"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/background_border"
-    android:layout_margin="0.5dp"
+    android:layout_margin="0.1dp"
     >
 
     <RelativeLayout
-        android:id="@+id/date_background"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         >
@@ -52,7 +53,24 @@
                 tools:text="100"
                 />
 
+            <View
+                android:id="@+id/spotify_playlist_line"
+                android:layout_width="match_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_height="2dp"
+                android:background="@color/colorSpotifyButton"
+                android:visibility="invisible"
+                />
+
         </LinearLayout>
+
+<!--        <View-->
+<!--            android:id="@+id/date_background"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:background="@color/colorDateViewLineBreak"-->
+<!--            />-->
 
     </RelativeLayout>
 </FrameLayout>
