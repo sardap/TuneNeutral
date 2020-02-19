@@ -5,15 +5,14 @@ import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
-import android.view.WindowManager
+import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
+import com.example.tuneneutral.database.Database
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
 import com.example.tuneneutral.fragments.StatusBar
@@ -128,6 +127,38 @@ class MainActivity : AppCompatActivity(),
         when(action) {
             RatingFragment.Action.Complete -> changeToCalandarFragment()
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        super.onCreateOptionsMenu(menu)
+
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.main_menu, menu)
+
+        val debugItem = menu?.findItem(R.id.enable_debug)
+
+        if(debugItem != null) {
+            debugItem.isChecked = DatabaseManager.instance.getUserSettings().debugMode
+        }
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.enable_debug -> {
+                item.isChecked = toggleDebug()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun toggleDebug(): Boolean {
+        val userSettings = DatabaseManager.instance.getUserSettings()
+        userSettings.debugMode = !userSettings.debugMode
+        DatabaseManager.instance.setUserSettings()
+        return userSettings.debugMode
     }
 
     private fun initloginWindow() {

@@ -49,5 +49,6 @@
     <string name="day_sat">Sat</string>
     <string name="day_sun">Sun</string>
 
-
+    <string name="menu_title_settings">Settings</string>
+    <string name="menu_title_debug">Enable Debug</string>
 </resources>

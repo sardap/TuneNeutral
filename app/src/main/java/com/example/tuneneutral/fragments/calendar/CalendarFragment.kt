@@ -35,7 +35,6 @@ import kotlinx.android.synthetic.main.legend_layout.*
 import kotlinx.android.synthetic.main.month_header.view.month_title
 import org.threeten.bp.LocalDate
 import org.threeten.bp.temporal.WeekFields
-import java.lang.String
 import java.util.*
 import kotlin.math.abs
 
