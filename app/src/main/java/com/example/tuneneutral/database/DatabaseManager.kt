@@ -162,6 +162,15 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    fun dbToJson(): String {
+        val result = mGson.toJson(mDb)
+        if(result != null)
+            return result
+
+        throw RuntimeException("Cannot convert database to json")
+    }
+
+    @Synchronized
     private fun loadDB() {
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)
@@ -190,7 +199,7 @@ class DatabaseManager private constructor() {
     private fun writeDB() {
         try {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
-            outputStreamWriter.write(mGson.toJson(mDb))
+            outputStreamWriter.write(dbToJson())
             outputStreamWriter.close()
         } catch (e: IOException) {
             Log.e("Exception", "File write failed: $e")

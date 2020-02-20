@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.ActionBar
 import android.app.Dialog
 import android.content.Intent
-import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -15,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
+import com.example.tuneneutral.database.Database
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
 import com.example.tuneneutral.fragments.StatusBar
@@ -165,6 +165,10 @@ class MainActivity : AppCompatActivity(),
                 showVersionInfo()
                 true
             }
+            R.id.export_database -> {
+                exportDatabase()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -231,6 +235,17 @@ class MainActivity : AppCompatActivity(),
         }
 
         dialog.show()
+    }
+
+    private fun exportDatabase() {
+        val sendIntent: Intent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, DatabaseManager.instance.dbToJson())
+            type = "text/json"
+        }
+
+        val shareIntent = Intent.createChooser(sendIntent, null)
+        startActivity(shareIntent)
     }
 
     private fun initloginWindow() {
