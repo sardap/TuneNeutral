@@ -38,6 +38,10 @@
         android:icon="@drawable/ic_audiotrack_24px"
         />
 
-
+    <item
+        android:id="@+id/version_info"
+        android:title="@string/menu_version_info"
+        android:icon="@drawable/ic_info_24px"
+        />
 
 </menu>

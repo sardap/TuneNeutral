@@ -1,8 +1,11 @@
 package com.example.tuneneutral.activities
 
+import android.annotation.SuppressLint
 import android.app.ActionBar
 import android.app.Dialog
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
@@ -12,7 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
-import com.example.tuneneutral.database.Database
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
 import com.example.tuneneutral.fragments.StatusBar
@@ -24,6 +26,7 @@ import com.example.tuneneutral.utility.DateUtility
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
+import kotlinx.android.synthetic.main.version_info.*
 import java.util.*
 
 
@@ -148,7 +151,7 @@ class MainActivity : AppCompatActivity(),
         return when (item.itemId) {
             R.id.enable_debug -> {
                 item.isChecked = toggleDebug()
-                true
+                false
             }
             R.id.clear_database -> {
                 clearDatabase()
@@ -156,6 +159,10 @@ class MainActivity : AppCompatActivity(),
             }
             R.id.pull_songs -> {
                 pullSongs()
+                true
+            }
+            R.id.version_info -> {
+                showVersionInfo()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -183,6 +190,47 @@ class MainActivity : AppCompatActivity(),
         if(accessToken != null) {
             Thread(PullNewTracks(accessToken)).start()
         }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun showVersionInfo() {
+        class ViewHolder(dialog: Dialog) {
+            val versionText = dialog.version_number
+            val buildText = dialog.build_number
+            val closeButton = dialog.close_button
+        }
+
+        val dialog = Dialog(this, android.R.style.ThemeOverlay_Material_Light)
+        dialog.setContentView(R.layout.version_info)
+
+        val window = dialog.window
+        if(window != null){
+            window.setLayout(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT)
+            window.setGravity(Gravity.CENTER)
+        }
+
+        dialog.window?.attributes?.dimAmount = 0.7f
+        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+
+        val viewHolder = ViewHolder(dialog)
+
+        try {
+            val pInfo = packageManager.getPackageInfo(packageName, 0)
+            val version = pInfo.versionCode
+            viewHolder.versionText.text = "Version Number $version"
+            viewHolder.buildText.text = "Base RevisionCode ${pInfo.baseRevisionCode}\n" +
+                    "Last Update ${pInfo.lastUpdateTime}\n" +
+                    "Version Name ${pInfo.versionName}\n" +
+                    "Package Name ${pInfo.packageName}"
+        } catch (e: PackageManager.NameNotFoundException) {
+            e.printStackTrace()
+        }
+
+        viewHolder.closeButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun initloginWindow() {

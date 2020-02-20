@@ -54,4 +54,7 @@
     <string name="menu_title_database">Database</string>
     <string name="menu_title_clear_database">Clear Database</string>
     <string name="menu_title_pull_songs">Pull Songs</string>
+    <string name="menu_version_info">Version Info</string>
+
+    <string name="close">Close</string>
 </resources>
