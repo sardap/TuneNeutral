@@ -1,13 +1,14 @@
 package com.example.tuneneutral.activities
 
+import android.annotation.SuppressLint
 import android.app.ActionBar
 import android.app.Dialog
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.view.Gravity
-import android.view.View
-import android.view.WindowManager
+import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -25,6 +26,7 @@ import com.example.tuneneutral.utility.DateUtility
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
+import kotlinx.android.synthetic.main.version_info.*
 import java.util.*
 
 
@@ -101,8 +103,8 @@ class MainActivity : AppCompatActivity(),
 
                 val lastPull = DatabaseManager.instance.getLastPullTime()
 
-                if(lastPull == null || lastPull < DateUtility.todayEpoch) {
-                    Thread(PullNewTracks(response.accessToken)).start()
+                if(DatabaseManager.instance.getAllTracks().count() < 20 || lastPull == null || lastPull < DateUtility.todayEpoch) {
+                    pullSongs()
                 }
 
 
@@ -128,6 +130,107 @@ class MainActivity : AppCompatActivity(),
         when(action) {
             RatingFragment.Action.Complete -> changeToCalandarFragment()
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        super.onCreateOptionsMenu(menu)
+
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.main_menu, menu)
+
+        val debugItem = menu?.findItem(R.id.enable_debug)
+
+        if(debugItem != null) {
+            debugItem.isChecked = DatabaseManager.instance.getUserSettings().debugMode
+        }
+
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.enable_debug -> {
+                item.isChecked = toggleDebug()
+                false
+            }
+            R.id.clear_database -> {
+                clearDatabase()
+                true
+            }
+            R.id.pull_songs -> {
+                pullSongs()
+                true
+            }
+            R.id.version_info -> {
+                showVersionInfo()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun toggleDebug(): Boolean {
+        val userSettings = DatabaseManager.instance.getUserSettings()
+        userSettings.debugMode = !userSettings.debugMode
+        DatabaseManager.instance.setUserSettings()
+        return userSettings.debugMode
+    }
+
+    private fun clearDatabase() {
+        DatabaseManager.instance.clearDatabase()
+        finish()
+        startActivity(intent)
+    }
+
+    private fun pullSongs() {
+        val accessToken = SpotifyUserInfo.SpotifyAccessToken
+
+        assert(accessToken != null)
+
+        if(accessToken != null) {
+            Thread(PullNewTracks(accessToken)).start()
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun showVersionInfo() {
+        class ViewHolder(dialog: Dialog) {
+            val versionText = dialog.version_number
+            val buildText = dialog.build_number
+            val closeButton = dialog.close_button
+        }
+
+        val dialog = Dialog(this, android.R.style.ThemeOverlay_Material_Light)
+        dialog.setContentView(R.layout.version_info)
+
+        val window = dialog.window
+        if(window != null){
+            window.setLayout(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT)
+            window.setGravity(Gravity.CENTER)
+        }
+
+        dialog.window?.attributes?.dimAmount = 0.7f
+        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+
+        val viewHolder = ViewHolder(dialog)
+
+        try {
+            val pInfo = packageManager.getPackageInfo(packageName, 0)
+            val version = pInfo.versionCode
+            viewHolder.versionText.text = "Version Number $version"
+            viewHolder.buildText.text = "Base RevisionCode ${pInfo.baseRevisionCode}\n" +
+                    "Last Update ${pInfo.lastUpdateTime}\n" +
+                    "Version Name ${pInfo.versionName}\n" +
+                    "Package Name ${pInfo.packageName}"
+        } catch (e: PackageManager.NameNotFoundException) {
+            e.printStackTrace()
+        }
+
+        viewHolder.closeButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun initloginWindow() {
