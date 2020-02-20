@@ -99,7 +99,7 @@ class GenrateNeutralisedPlaylist(
     }
 
     private fun scaleValence(valenece: Float): Float {
-        return (valenece - 0.5f) / 8
+        return (valenece - 0.5f) / 10
     }
 
     private fun getValidTracks(allTracks: HashMap<String, Float>, result: ArrayList<String>, currentValence: Float): ArrayList<String> {
