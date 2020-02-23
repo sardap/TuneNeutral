@@ -171,6 +171,13 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    fun importNewDB(jsonStr: String) {
+        val newDb = mGson.fromJson(jsonStr, Database::class.java)
+        mDb = newDb
+        commitChanges()
+    }
+
+    @Synchronized
     private fun loadDB() {
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)

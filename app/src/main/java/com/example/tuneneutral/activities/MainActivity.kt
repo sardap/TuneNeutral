@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
-import com.example.tuneneutral.database.Database
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
 import com.example.tuneneutral.fragments.StatusBar
@@ -23,10 +22,15 @@ import com.example.tuneneutral.playlistGen.PullNewTracks
 import com.example.tuneneutral.spotify.SpotifyConstants
 import com.example.tuneneutral.spotify.SpotifyUserInfo
 import com.example.tuneneutral.utility.DateUtility
+import com.google.gson.JsonSyntaxException
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
+import kotlinx.android.synthetic.main.import_database_window.*
 import kotlinx.android.synthetic.main.version_info.*
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.StringWriter
 import java.util.*
 
 
@@ -37,6 +41,7 @@ class MainActivity : AppCompatActivity(),
     companion object {
         private const val MOVE_DEFAULT_TIME: Long = 1000 / 5
         private const val FADE_DEFAULT_TIME: Long = 300 / 5
+        private const val IMPORT_DATABASE_FILE = 31024
     }
 
     private enum class State {
@@ -69,6 +74,14 @@ class MainActivity : AppCompatActivity(),
         setContentView(R.layout.activity_main)
 
         DatabaseManager.instance.giveContext(this)
+
+        when {
+            intent?.action == Intent.ACTION_SEND -> {
+                if(intent.type == "text/*") {
+                    showImportDatabaseDialog(intent)
+                }
+            }
+        }
     }
 
     override fun onStart() {
@@ -94,28 +107,35 @@ class MainActivity : AppCompatActivity(),
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (SpotifyConstants.AUTH_TOKEN_REQUEST_CODE == requestCode) {
-            val response = AuthenticationClient.getResponse(resultCode, data)
 
-            if(response.accessToken != null) {
-                SpotifyUserInfo.SpotifyAccessToken = response.accessToken
-                SpotifyUserInfo.TimeGotten = Calendar.getInstance().timeInMillis
+        when(requestCode) {
+            SpotifyConstants.AUTH_TOKEN_REQUEST_CODE -> {
+                val response = AuthenticationClient.getResponse(resultCode, data)
 
-                val lastPull = DatabaseManager.instance.getLastPullTime()
+                if(response.accessToken != null) {
+                    SpotifyUserInfo.SpotifyAccessToken = response.accessToken
+                    SpotifyUserInfo.TimeGotten = Calendar.getInstance().timeInMillis
 
-                if(DatabaseManager.instance.getAllTracks().count() < 20 || lastPull == null || lastPull < DateUtility.todayEpoch) {
-                    pullSongs()
+                    val lastPull = DatabaseManager.instance.getLastPullTime()
+
+                    if(DatabaseManager.instance.getAllTracks().count() < 20 || lastPull == null || lastPull < DateUtility.todayEpoch) {
+                        pullSongs()
+                    }
+                } else {
+                    initloginWindow()
+                    checkSpotifyLogin()
+
+                    val toast = Toast.makeText(this, "Unable to Login into Spotify Error:${response.error}", Toast.LENGTH_LONG)
+                    toast.setGravity(Gravity.CENTER, 0, 0)
+                    toast.show()
                 }
-
-
-            } else {
-                initloginWindow()
-                checkSpotifyLogin()
-
-                val toast = Toast.makeText(this, "Unable to Login into Spotify Error:${response.error}", Toast.LENGTH_LONG)
-                toast.setGravity(Gravity.CENTER, 0, 0)
-                toast.show()
             }
+            IMPORT_DATABASE_FILE -> {
+                data?.apply {
+                    showImportDatabaseDialog(data)
+                }
+            }
+
         }
     }
 
@@ -169,6 +189,11 @@ class MainActivity : AppCompatActivity(),
                 exportDatabase()
                 true
             }
+            R.id.import_database -> {
+                importDatabase()
+//                showImportDatabaseDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -182,8 +207,7 @@ class MainActivity : AppCompatActivity(),
 
     private fun clearDatabase() {
         DatabaseManager.instance.clearDatabase()
-        finish()
-        startActivity(intent)
+        refreshActivy()
     }
 
     private fun pullSongs() {
@@ -246,6 +270,73 @@ class MainActivity : AppCompatActivity(),
 
         val shareIntent = Intent.createChooser(sendIntent, null)
         startActivity(shareIntent)
+    }
+
+    private fun importDatabase() {
+        // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
+        // browser.
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+
+        // Filter to only show results that can be "opened", such as a
+        // file (as opposed to a list of contacts or timezones)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+
+        // Filter to show only images, using the image MIME data type.
+        // If one wanted to search for ogg vorbis files, the type would be "audio/ogg".
+        // To search for all documents available via installed storage providers,
+        // it would be "*/*".
+        intent.type = "text/*"
+
+        startActivityForResult(intent, IMPORT_DATABASE_FILE)
+    }
+
+    private fun showImportDatabaseDialog(intent: Intent) {
+        class ViewHolder(dialog: Dialog) {
+            val importDbButton = dialog.Import_button
+        }
+
+        val dialog = Dialog(this, android.R.style.ThemeOverlay_Material_Light)
+        dialog.setContentView(R.layout.import_database_window)
+
+        val window = dialog.window
+        if(window != null){
+            window.setLayout(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT)
+            window.setGravity(Gravity.CENTER)
+        }
+
+        dialog.window?.attributes?.dimAmount = 0.7f
+        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+
+        val viewHolder = ViewHolder(dialog)
+
+
+        val data = intent.data
+        if(data != null) {
+            val inputStream = contentResolver.openInputStream(data) ?: throw Exception("Input stream null")
+
+            val reader = BufferedReader(InputStreamReader(inputStream))
+
+            val jsonStr = StringBuilder()
+            for(line in reader.lines()) {
+                jsonStr.append(line)
+            }
+
+            viewHolder.importDbButton.setOnClickListener {
+                try {
+                    DatabaseManager.instance.importNewDB(jsonStr.toString())
+                    refreshActivy()
+                } catch (e: JsonSyntaxException) {
+                    Toast.makeText(applicationContext, getString(R.string.error_cannot_import_database_syntax), Toast.LENGTH_SHORT).show()
+                } finally {
+                    dialog.dismiss()
+                }
+            }
+
+            dialog.show()
+        } else {
+            Toast.makeText(dialog.context, getString(R.string.error_cannot_import_database_no_extra), Toast.LENGTH_SHORT).show()
+        }
+
     }
 
     private fun initloginWindow() {
@@ -312,6 +403,11 @@ class MainActivity : AppCompatActivity(),
             SpotifyConstants.AUTH_TOKEN_REQUEST_CODE,
             request
         )
+    }
+
+    private fun refreshActivy() {
+        finish()
+        startActivity(intent)
     }
 
     private fun initStatusBar() {
