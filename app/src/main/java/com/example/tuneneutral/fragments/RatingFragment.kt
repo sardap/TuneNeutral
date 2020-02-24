@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.opengl.Visibility
 import android.os.Bundle
 import android.view.*
 import android.widget.Button
@@ -19,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
+import com.example.tuneneutral.database.Database
 import com.example.tuneneutral.playlistGen.GenrateNeutralisedPlaylist
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.spotify.SpotifyUserInfo
@@ -104,6 +106,12 @@ class RatingFragment : Fragment() {
 
         mViewHolder.neutralisedButton.setOnClickListener {
             neutraliseClicked()
+        }
+
+        mViewHolder.datePicker.visibility = if(DatabaseManager.instance.getUserSettings().debugMode) {
+            View.VISIBLE
+        } else {
+            View.GONE
         }
     }
 
