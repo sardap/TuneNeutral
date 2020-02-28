@@ -90,6 +90,19 @@ class DatabaseManager private constructor() {
         return mDb.dayRatings.count() > 0
     }
 
+    fun getDayRatingsInOrder(): List<DayRating> {
+        val result = ArrayList(mDb.dayRatings.values)
+        result.sortedWith(compareBy { it.timestamp })
+        return result
+    }
+
+    @Synchronized
+    fun getDayRatingsInRange(start: Long, end: Long): List<DayRating> {
+        var result = getDayRatingsInOrder()
+        result = result.filter { it.timestamp in start..end }
+        return result
+    }
+
     @Synchronized
     fun addTrackInfo(track: TrackInfo) {
         Log.d(HOLDER.DATABASE_TAG, "Adding new track ${track}}")

@@ -16,6 +16,7 @@ import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
+import com.example.tuneneutral.fragments.StatsFragment
 import com.example.tuneneutral.fragments.StatusBar
 import com.example.tuneneutral.fragments.calendar.CalendarFragment
 import com.example.tuneneutral.playlistGen.PullNewTracks
@@ -93,6 +94,9 @@ class MainActivity : AppCompatActivity(),
 
         logIntoSpotify()
 
+        changeToStatsFragment()
+
+        return
         when(mState) {
             State.ShowingCalander -> changeToCalandarFragment()
             State.ShowingRating -> changeToRatingFragment()
@@ -418,6 +422,10 @@ class MainActivity : AppCompatActivity(),
 
     private fun showStatusBar() {
 
+    }
+
+    private fun changeToStatsFragment() {
+        changeFragment(StatsFragment.newInstance())
     }
 
     private fun changeToRatingFragment() {
