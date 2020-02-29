@@ -142,9 +142,11 @@ class StatsFragment : Fragment() {
             }
         }
 
-        xAxis.axisMinimum = dates.first().timestamp.toFloat()
-        xAxis.axisMaximum = dates.last().timestamp.toFloat()
-        xAxis.labelCount = (dates.last().timestamp - dates.first().timestamp).toInt()
+        if(dates.count() > 0) {
+            xAxis.axisMinimum = dates.first().timestamp.toFloat()
+            xAxis.axisMaximum = dates.last().timestamp.toFloat()
+            xAxis.labelCount = (dates.last().timestamp - dates.first().timestamp).toInt()
+        }
         xAxis.labelRotationAngle = 0.5f
         xAxis.textSize = 12f
         xAxis.labelRotationAngle = 50f

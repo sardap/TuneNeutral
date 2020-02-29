@@ -27,6 +27,7 @@ import com.google.gson.JsonSyntaxException
 import com.spotify.sdk.android.authentication.AuthenticationClient
 import com.spotify.sdk.android.authentication.AuthenticationRequest
 import com.spotify.sdk.android.authentication.AuthenticationResponse
+import kotlinx.android.synthetic.main.activity_main.view.*
 import kotlinx.android.synthetic.main.import_database_window.*
 import kotlinx.android.synthetic.main.version_info.*
 import java.io.BufferedReader
@@ -46,33 +47,30 @@ class MainActivity : AppCompatActivity(),
     }
 
     private enum class State {
-        ShowingCalander, ShowingRating
+        ShowingCalander, ShowingRating, ShowingStats
     }
 
     private class SpotifyLoginDialogViewHolder(view: Dialog) {
         val spotifyLoginButton = view.findViewById<Button>(R.id.spotify_login_button)
     }
 
-    private class StatusBarViewHolder(view: View) {
-        val progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
-        val loadingMessage = view.findViewById<TextView>(R.id.loading_message)
-    }
-
     private class ViewHolder(view: View) {
-        val fragmentContainer = view.findViewById<FrameLayout>(R.id.fragment_container)
-        val statisBarViewHolder = StatusBarViewHolder(view)
+        val fragmentContainer = view.fragment_container
+        val botNavBar = view.bottom_navigation
     }
 
     private var mState = State.ShowingCalander
     private var mSpotifyLoginDialog: Dialog? = null
 
     private lateinit var mSpotifyLoginDialogViewHolder: SpotifyLoginDialogViewHolder
-    private lateinit var mStatusBarFrameLayout: FrameLayout
     private lateinit var mFragmentManager: FragmentManager
+    private lateinit var mViewHolder: ViewHolder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        mViewHolder = ViewHolder(window.decorView)
 
         DatabaseManager.instance.giveContext(this)
 
@@ -88,19 +86,13 @@ class MainActivity : AppCompatActivity(),
     override fun onStart() {
         super.onStart()
 
-        mStatusBarFrameLayout = findViewById(R.id.fragment_status_bar)
-
         mFragmentManager = supportFragmentManager
 
         logIntoSpotify()
 
-        changeToStatsFragment()
+        initBotNavBar()
 
-        return
-        when(mState) {
-            State.ShowingCalander -> changeToCalandarFragment()
-            State.ShowingRating -> changeToRatingFragment()
-        }
+        refreshFrag()
     }
 
     override fun onResume() {
@@ -343,6 +335,27 @@ class MainActivity : AppCompatActivity(),
 
     }
 
+    private fun refreshFrag() {
+        when(mState) {
+            State.ShowingCalander -> changeToCalandarFragment()
+            State.ShowingRating -> changeToRatingFragment()
+            State.ShowingStats -> changeToStatsFragment()
+        }
+    }
+
+    private fun initBotNavBar() {
+        mViewHolder.botNavBar.setOnNavigationItemSelectedListener {
+            mState = when(it.itemId) {
+                R.id.menu_nav_cal -> State.ShowingCalander
+                R.id.menu_nav_stats -> State.ShowingStats
+                R.id.menu_nav_rating -> State.ShowingRating
+                else -> throw java.lang.RuntimeException("Unknwon Menu option")
+            }
+            refreshFrag()
+            true
+        }
+    }
+
     private fun initloginWindow() {
 
         val dialog = Dialog(this, android.R.style.ThemeOverlay_Material_Light)
@@ -414,16 +427,6 @@ class MainActivity : AppCompatActivity(),
         startActivity(intent)
     }
 
-    private fun initStatusBar() {
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.fragment_status_bar, StatusBar.newInstance())
-        transaction.commit()
-    }
-
-    private fun showStatusBar() {
-
-    }
-
     private fun changeToStatsFragment() {
         changeFragment(StatsFragment.newInstance())
     }
@@ -442,10 +445,17 @@ class MainActivity : AppCompatActivity(),
         val transaction = mFragmentManager.beginTransaction()
 
         if(previousFragment != null) {
+            // TODO Improve so no duplcation
             if(previousFragment is CalendarFragment) {
-                transaction.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right, 0, 0)
-            } else {
+                if(nextFragment is RatingFragment) {
+                    transaction.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right, 0, 0)
+                } else if (nextFragment is StatsFragment) {
+                    transaction.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left, 0, 0)
+                }
+            } else if(previousFragment is RatingFragment && nextFragment is CalendarFragment) {
                 transaction.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left, 0, 0)
+            } else if(previousFragment is StatsFragment && nextFragment is CalendarFragment) {
+                transaction.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right, 0, 0)
             }
         }
 
