@@ -90,6 +90,19 @@ class DatabaseManager private constructor() {
         return mDb.dayRatings.count() > 0
     }
 
+    fun getDayRatingsInOrder(): List<DayRating> {
+        val result = ArrayList(mDb.dayRatings.values)
+        result.sortedWith(compareBy { it.timestamp })
+        return result
+    }
+
+    @Synchronized
+    fun getDayRatingsInRange(start: Long, end: Long): List<DayRating> {
+        var result = getDayRatingsInOrder()
+        result = result.filter { it.timestamp in start..end }
+        return result
+    }
+
     @Synchronized
     fun addTrackInfo(track: TrackInfo) {
         Log.d(HOLDER.DATABASE_TAG, "Adding new track ${track}}")
@@ -162,6 +175,22 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    fun dbToJson(): String {
+        val result = mGson.toJson(mDb)
+        if(result != null)
+            return result
+
+        throw RuntimeException("Cannot convert database to json")
+    }
+
+    @Synchronized
+    fun importNewDB(jsonStr: String) {
+        val newDb = mGson.fromJson(jsonStr, Database::class.java)
+        mDb = newDb
+        commitChanges()
+    }
+
+    @Synchronized
     private fun loadDB() {
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)
@@ -190,7 +219,7 @@ class DatabaseManager private constructor() {
     private fun writeDB() {
         try {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
-            outputStreamWriter.write(mGson.toJson(mDb))
+            outputStreamWriter.write(dbToJson())
             outputStreamWriter.close()
         } catch (e: IOException) {
             Log.e("Exception", "File write failed: $e")

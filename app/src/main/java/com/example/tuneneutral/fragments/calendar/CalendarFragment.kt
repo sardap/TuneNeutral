@@ -136,7 +136,7 @@ class CalendarFragment : Fragment() {
             val openButton = view.open_button
             val dateBackground = view.date_background
             val dateRatingLine = view.date_rating_line
-            val spotifyPlaylistLine = view.spotify_playlist_line
+            val spotifyPlaylistLine = view.spotify_playlist_icon
         }
 
         val minColorInt =  context!!.getColor(R.color.colorNothing)
@@ -201,14 +201,10 @@ class CalendarFragment : Fragment() {
                         color = context!!.getColor(R.color.colorDeufaltText)
                     }
 
-                    if(day.date == DateUtility.now) {
-                        container.openButton.setOnClickListener {
-                            rateToday()
-                        }
-
-                        border = context!!.getDrawable(R.drawable.today_background_border)!!
+                    border = if(day.date == DateUtility.now) {
+                        context!!.getDrawable(R.drawable.today_background_border)!!
                     } else {
-                        border = context!!.getDrawable(R.drawable.this_month_background_border)!!
+                        context!!.getDrawable(R.drawable.this_month_background_border)!!
                     }
 
                     val end = day.date.withDayOfMonth(day.date.lengthOfMonth())

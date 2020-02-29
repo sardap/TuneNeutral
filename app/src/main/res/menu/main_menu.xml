@@ -29,6 +29,15 @@
                 android:title="@string/menu_title_clear_database"
                 android:icon="@drawable/ic_clear_24px"
                 />
+            <item
+                android:id="@+id/export_database"
+                android:title="@string/menu_title_export_database"
+                android:icon="@drawable/ic_share_24px"
+                />
+            <item
+                android:id="@+id/import_database"
+                android:title="@string/menu_title_import_database"
+                />
         </menu>
     </item>
 
