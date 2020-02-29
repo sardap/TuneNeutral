@@ -3,6 +3,7 @@
     <color name="colorPrimary">#b93333</color>
     <color name="colorPrimaryDark">#a92b29</color>
     <color name="colorAccent">#33b9b9</color>
+    <color name="colorMenuIconPrimary">#AAAAAA</color>
 
     <color name="colorToday">@color/colorAccent</color>
     <color name="colorThisMonth">#000000</color>
@@ -19,4 +20,5 @@
 
     <color name="colorDeufaltText">#000000</color>
     <color name="colorDayTextNotActive">#696969</color>
+    <color name="colorPrimayConstrast">#FFFFFF</color>
 </resources>
