@@ -53,14 +53,15 @@
                 tools:text="100"
                 />
 
-            <View
-                android:id="@+id/spotify_playlist_line"
-                android:layout_width="match_parent"
-                android:layout_marginLeft="5dp"
-                android:layout_marginRight="5dp"
-                android:layout_height="2dp"
-                android:background="@color/colorSpotifyButton"
-                android:visibility="invisible"
+            <ImageView
+                android:id="@+id/spotify_playlist_icon"
+                android:layout_width="13sp"
+                android:layout_height="13sp"
+                android:layout_gravity="center"
+                android:background="@drawable/ic_library_music_24px"
+                android:visibility="gone"
+                android:contentDescription="@string/playlist"
+                android:backgroundTint="@color/colorSpotifyButton"
                 />
 
         </LinearLayout>

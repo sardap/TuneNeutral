@@ -72,4 +72,5 @@
     <string name="menu_nav_calendar">Calendar</string>
     <string name="menu_nav_rating">Rating</string>
     <string name="menu_nav_stats">Stats</string>
+    <string name="playlist">playlist</string>
 </resources>

@@ -136,7 +136,7 @@ class CalendarFragment : Fragment() {
             val openButton = view.open_button
             val dateBackground = view.date_background
             val dateRatingLine = view.date_rating_line
-            val spotifyPlaylistLine = view.spotify_playlist_line
+            val spotifyPlaylistLine = view.spotify_playlist_icon
         }
 
         val minColorInt =  context!!.getColor(R.color.colorNothing)
