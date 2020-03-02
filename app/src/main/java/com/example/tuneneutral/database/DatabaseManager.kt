@@ -104,18 +104,18 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    fun addTrackInfo(track: TrackInfo) {
+    fun addTrackInfo(track: Track) {
         Log.d(HOLDER.DATABASE_TAG, "Adding new track ${track}}")
         mDb.tracks.add(track)
         writeDB()
     }
 
     @Synchronized
-    fun getTrackInfo(trackId: String): TrackInfo? {
+    fun getTrackInfo(trackId: String): Track? {
         val tracks = mDb.tracks
 
         for (track in tracks) {
-            if(track.tackId == trackId) {
+            if(track.trackID == trackId) {
                 return track
             }
         }
@@ -128,7 +128,7 @@ class DatabaseManager private constructor() {
         val result = ArrayList<String>()
 
         for (track in getAllTracks()) {
-            result.add(track.tackId)
+            result.add(track.trackID)
         }
 
         return result
@@ -139,15 +139,15 @@ class DatabaseManager private constructor() {
         val result = ArrayList<String>()
 
         for (track in getTopTracks()) {
-            result.add(track.tackId)
+            result.add(track.trackID)
         }
 
         return result
     }
 
     @Synchronized
-    fun getTopTracks(): List<TrackInfo> {
-        val result = ArrayList<TrackInfo>()
+    fun getTopTracks(): List<Track> {
+        val result = ArrayList<Track>()
 
         for (track in getAllTracks()) {
             if(track.topTrack) {
@@ -159,7 +159,7 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    fun getAllTracks(): List<TrackInfo> {
+    fun getAllTracks(): List<Track> {
         return ArrayList(mDb.tracks)
     }
 

@@ -1,4 +1,4 @@
-package com.example.tuneneutral.fragments.calendar
+package com.example.tuneneutral.fragments.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -47,11 +47,13 @@ class CalendarListAdatper(
         val createNewEntryButton: Button = view.findViewById(R.id.button_rate_today)
     }
 
-    class DateViewHolderNoPlaylist(view: View) : ViewHolder(view), RatingSubtitle {
+    class DateViewHolderNoPlaylist(view: View) : ViewHolder(view),
+        RatingSubtitle {
         override val ratingTextView: TextView = view.findViewById(R.id.rating_text)
     }
 
-    class DateViewHolderComplete(view: View) : ViewHolder(view), RatingSubtitle {
+    class DateViewHolderComplete(view: View) : ViewHolder(view),
+        RatingSubtitle {
         val viewPlaylistButton: Button = view.findViewById(R.id.view_playlist_button)
         override val ratingTextView: TextView = view.findViewById(R.id.rating_text)
     }
@@ -73,9 +75,23 @@ class CalendarListAdatper(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
 
         return when(viewType) {
-            ViewTypes.COMEPLETE -> DateViewHolderComplete(LayoutInflater.from(parent.context).inflate(R.layout.date_view_complete, parent, false))
-            ViewTypes.NO_PLAYLIST -> DateViewHolderNoPlaylist(LayoutInflater.from(parent.context).inflate(R.layout.date_view_no_playlist, parent, false))
-            ViewTypes.TODAY -> DateViewTodayHolder(LayoutInflater.from(parent.context).inflate(R.layout.date_view_today, parent, false))
+            ViewTypes.COMEPLETE -> DateViewHolderComplete(
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.date_view_complete,
+                    parent,
+                    false
+                )
+            )
+            ViewTypes.NO_PLAYLIST -> DateViewHolderNoPlaylist(
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.date_view_no_playlist,
+                    parent,
+                    false
+                )
+            )
+            ViewTypes.TODAY -> DateViewTodayHolder(
+                LayoutInflater.from(parent.context).inflate(R.layout.date_view_today, parent, false)
+            )
             else -> throw RuntimeException()
         }
     }

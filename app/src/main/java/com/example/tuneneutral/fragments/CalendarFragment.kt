@@ -1,4 +1,4 @@
-package com.example.tuneneutral.fragments.calendar
+package com.example.tuneneutral.fragments
 
 import android.content.Context
 import android.graphics.Color
@@ -78,7 +78,10 @@ class CalendarFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        mViewHolder = ViewHolder(view!!)
+        mViewHolder =
+            ViewHolder(
+                view!!
+            )
 
         initCalendarView()
 
@@ -193,7 +196,7 @@ class CalendarFragment : Fragment() {
                             container.spotifyPlaylistLine.visibility = View.VISIBLE
 
                             container.openButton.setOnClickListener {
-                                SpotifyUtiltiy.OpenPlaylistInSpotify(context!!, dayRating.playlistID)
+                                SpotifyUtiltiy.openPlaylistInSpotify(context!!, dayRating.playlistID)
                             }
                         }
                     } else {
@@ -249,7 +252,7 @@ class CalendarFragment : Fragment() {
             10 -> R.string.month_oct
             11 -> R.string.month_nov
             12 -> R.string.month_dec
-            else -> throw Exception()
+            else -> throw Exception("Unknown Month")
         }
 
         mViewHolder.monthTitle.text  = getString(textID)

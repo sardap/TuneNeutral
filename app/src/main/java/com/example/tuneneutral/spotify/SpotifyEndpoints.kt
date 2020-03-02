@@ -1,7 +1,11 @@
 package com.example.tuneneutral.spotify
 
+import android.media.MediaPlayer
 import android.util.Log
+import com.example.tuneneutral.database.Track
+import com.example.tuneneutral.database.TrackFeatures
 import com.example.tuneneutral.database.TrackInfo
+import com.google.gson.JsonObject
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -119,8 +123,8 @@ class SpotifyEndpoints {
         }
 
 
-        fun getTrackAnaysis(accessToken: String, id: String, topTrack: Boolean): TrackInfo? {
-            var result: TrackInfo? = null
+        fun getTrackAnaysis(accessToken: String, id: String, topTrack: Boolean): Track? {
+            var result: Track? = null
 
             val request = Request.Builder()
                 .url(String.format("https://api.spotify.com/v1/audio-features/%s", id))
@@ -136,22 +140,25 @@ class SpotifyEndpoints {
                 try {
                     val jsonObject = JSONObject(response.body!!.string())
 
-                    result = TrackInfo(
+                    result = Track(
                         id,
-                        topTrack,
-                        jsonObject.getInt("duration_ms"),
-                        jsonObject.getInt("key"),
-                        jsonObject.getInt("mode"),
-                        jsonObject.getInt("time_signature"),
-                        jsonObject.getDouble("acousticness"),
-                        jsonObject.getDouble("danceability"),
-                        jsonObject.getDouble("energy"),
-                        jsonObject.getDouble("instrumentalness"),
-                        jsonObject.getDouble("liveness"),
-                        jsonObject.getDouble("loudness"),
-                        jsonObject.getDouble("speechiness"),
-                        jsonObject.getDouble("valence"),
-                        jsonObject.getDouble("tempo")
+                        TrackFeatures(
+                            topTrack,
+                            jsonObject.getInt("duration_ms"),
+                            jsonObject.getInt("key"),
+                            jsonObject.getInt("mode"),
+                            jsonObject.getInt("time_signature"),
+                            jsonObject.getDouble("acousticness"),
+                            jsonObject.getDouble("danceability"),
+                            jsonObject.getDouble("energy"),
+                            jsonObject.getDouble("instrumentalness"),
+                            jsonObject.getDouble("liveness"),
+                            jsonObject.getDouble("loudness"),
+                            jsonObject.getDouble("speechiness"),
+                            jsonObject.getDouble("valence"),
+                            jsonObject.getDouble("tempo")
+                        ),
+                        null
                     )
 
                     Log.d(SPOTIFY_END_POINT, "Got new analysis: $result")
@@ -291,6 +298,64 @@ class SpotifyEndpoints {
             }
 
             return ArrayList()
+        }
+
+        fun getTrackInfo(accessToken: String, trackID: String) : TrackInfo? {
+            var result: TrackInfo? = null
+
+            val request = Request.Builder()
+                .url("https://api.spotify.com/v1/tracks/$trackID")
+                .addHeader("Authorization", "Bearer $accessToken")
+                .build()
+
+            val response =
+                sendRequestGetResponse(
+                    request
+                )
+
+            if (response.isSuccessful) {
+                try {
+                    val jsonObject = JSONObject(response.body!!.string())
+
+                    val topTracksUris = ArrayList<String>()
+
+                    Log.d("top tracks gotten :", topTracksUris.toString())
+
+                    var coverUrl: String = "https://community.spotify.com/t5/image/serverpage/image-id/25294i2836BD1C1A31BDF2/image-size/original?v=mpbl-1&px=-1"
+                    val images = jsonObject.getJSONObject("album").getJSONArray("images")
+
+                    for (i in 0 until images.length()) {
+                        if(images.getJSONObject(i).getInt("height") == 300) {
+                            coverUrl = images.getJSONObject(i).getString("url")
+                        }
+                    }
+
+                    val artists = ArrayList<String>()
+                    val artistsIds = ArrayList<String>()
+                    val jsonArtists = jsonObject.getJSONArray("artists")
+
+                    for (i in 0 until jsonArtists.length()) {
+                        artists.add(jsonArtists.getJSONObject(i).getString("name"))
+                        artistsIds.add(jsonArtists.getJSONObject(i).getString("id"))
+                    }
+
+                    result = TrackInfo(
+                        coverUrl,
+                        jsonObject.getString("name"),
+                        jsonObject.getInt("popularity"),
+                        artists,
+                        artistsIds,
+                        jsonObject.getJSONObject("album").getString("name")
+                    )
+
+                } catch (e: JSONException) {
+                    Log.d(SPOTIFY_END_POINT, "Failed to parse data: $e")
+                }
+            } else {
+                Log.d(SPOTIFY_END_POINT, "Failed to fetch data")
+            }
+
+            return result
         }
 
         private fun sendRequestGetResponse(request: Request): Response {

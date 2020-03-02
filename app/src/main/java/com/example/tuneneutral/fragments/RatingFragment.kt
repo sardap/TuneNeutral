@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.opengl.Visibility
 import android.os.Bundle
 import android.view.*
 import android.widget.Button
@@ -20,12 +19,11 @@ import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.tuneneutral.*
 import com.example.tuneneutral.MiscConsts.NEUTRALISE_PLAYLIST_MESSAGE
-import com.example.tuneneutral.database.Database
 import com.example.tuneneutral.playlistGen.GenrateNeutralisedPlaylist
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.spotify.SpotifyUserInfo
 import com.example.tuneneutral.utility.DateUtility
-import kotlinx.android.synthetic.main.rating_fragment.view.*
+import kotlinx.android.synthetic.main.fragment_rating.view.*
 import org.threeten.bp.LocalDate
 
 
@@ -88,7 +86,7 @@ class RatingFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.rating_fragment, container, false)
+        return inflater.inflate(R.layout.fragment_rating, container, false)
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {

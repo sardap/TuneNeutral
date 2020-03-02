@@ -16,9 +16,9 @@ import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
+import com.example.tuneneutral.fragments.SongDatabase
 import com.example.tuneneutral.fragments.StatsFragment
-import com.example.tuneneutral.fragments.StatusBar
-import com.example.tuneneutral.fragments.calendar.CalendarFragment
+import com.example.tuneneutral.fragments.CalendarFragment
 import com.example.tuneneutral.playlistGen.PullNewTracks
 import com.example.tuneneutral.spotify.SpotifyConstants
 import com.example.tuneneutral.spotify.SpotifyUserInfo
@@ -32,7 +32,6 @@ import kotlinx.android.synthetic.main.import_database_window.*
 import kotlinx.android.synthetic.main.version_info.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.io.StringWriter
 import java.util.*
 
 
@@ -47,7 +46,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private enum class State {
-        ShowingCalander, ShowingRating, ShowingStats
+        ShowingCalander, ShowingRating, ShowingStats, ShowingSongDB
     }
 
     private class SpotifyLoginDialogViewHolder(view: Dialog) {
@@ -335,27 +334,6 @@ class MainActivity : AppCompatActivity(),
 
     }
 
-    private fun refreshFrag() {
-        when(mState) {
-            State.ShowingCalander -> changeToCalandarFragment()
-            State.ShowingRating -> changeToRatingFragment()
-            State.ShowingStats -> changeToStatsFragment()
-        }
-    }
-
-    private fun initBotNavBar() {
-        mViewHolder.botNavBar.setOnNavigationItemSelectedListener {
-            mState = when(it.itemId) {
-                R.id.menu_nav_cal -> State.ShowingCalander
-                R.id.menu_nav_stats -> State.ShowingStats
-                R.id.menu_nav_rating -> State.ShowingRating
-                else -> throw java.lang.RuntimeException("Unknwon Menu option")
-            }
-            refreshFrag()
-            true
-        }
-    }
-
     private fun initloginWindow() {
 
         val dialog = Dialog(this, android.R.style.ThemeOverlay_Material_Light)
@@ -425,6 +403,34 @@ class MainActivity : AppCompatActivity(),
     private fun refreshActivy() {
         finish()
         startActivity(intent)
+    }
+
+    private fun refreshFrag() {
+        when(mState) {
+            State.ShowingCalander -> changeToCalandarFragment()
+            State.ShowingRating -> changeToRatingFragment()
+            State.ShowingStats -> changeToStatsFragment()
+            State.ShowingSongDB -> changeToSongDBFragment()
+            else -> throw java.lang.RuntimeException("State is not mapped to any fragment")
+        }
+    }
+
+    private fun initBotNavBar() {
+        mViewHolder.botNavBar.setOnNavigationItemSelectedListener {
+            mState = when(it.itemId) {
+                R.id.menu_nav_cal -> State.ShowingCalander
+                R.id.menu_nav_stats -> State.ShowingStats
+                R.id.menu_nav_rating -> State.ShowingRating
+                R.id.menu_nav_songs_db -> State.ShowingSongDB
+                else -> throw java.lang.RuntimeException("Unknwon Menu option")
+            }
+            refreshFrag()
+            true
+        }
+    }
+
+    private fun changeToSongDBFragment() {
+        changeFragment(SongDatabase.newInstance())
     }
 
     private fun changeToStatsFragment() {
