@@ -73,4 +73,9 @@
     <string name="menu_nav_rating">Rating</string>
     <string name="menu_nav_stats">Stats</string>
     <string name="playlist">playlist</string>
+    <string name="songs_in_database">Songs In Database</string>
+    <string name="music_library">Music Library</string>
+    <string name="song_view_title">Title: %s</string>
+    <string name="song_view_album_title">Album: %s</string>
+    <string name="song_view_artists_title">Artists: %s</string>
 </resources>

@@ -6,7 +6,7 @@ import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getTopTracks
 import com.example.tuneneutral.spotify.SpotifyEndpoints.Companion.getTrackAnaysis
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.database.PullHistory
-import com.example.tuneneutral.database.TrackInfo
+import com.example.tuneneutral.database.Track
 import com.example.tuneneutral.database.TrackSources
 import com.example.tuneneutral.utility.DateUtility
 import java.util.*
@@ -61,7 +61,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
     private fun pullRecommendedTracks() {
         val trackInfo = DatabaseManager.instance.getTopTracks().shuffled()
 
-        val seedTracks = ArrayList<TrackInfo>()
+        val seedTracks = ArrayList<Track>()
 
         for(i in 0 until 5) {
             seedTracks.add(trackInfo[i])
@@ -70,7 +70,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         val newTracks = getRecommendedTracks(
             mSpotifyAccessToken,
             5,
-            seedTracks.map { it.tackId },
+            seedTracks.map { it.trackID },
             seedTracks.map { it.speechiness }.average(),
             seedTracks.map { it.acousticness }.average(),
             seedTracks.map { it.tempo }.average(),

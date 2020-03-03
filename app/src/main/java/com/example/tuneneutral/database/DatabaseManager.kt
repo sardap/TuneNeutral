@@ -17,6 +17,7 @@ class DatabaseManager private constructor() {
     }
 
     companion object {
+        private val DATABASE_VERSION = 1
         val instance: DatabaseManager by lazy { HOLDER.INSTANCE }
     }
 
@@ -104,18 +105,18 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    fun addTrackInfo(track: TrackInfo) {
+    fun addTrackInfo(track: Track) {
         Log.d(HOLDER.DATABASE_TAG, "Adding new track ${track}}")
         mDb.tracks.add(track)
         writeDB()
     }
 
     @Synchronized
-    fun getTrackInfo(trackId: String): TrackInfo? {
+    fun getTrackInfo(trackId: String): Track? {
         val tracks = mDb.tracks
 
         for (track in tracks) {
-            if(track.tackId == trackId) {
+            if(track.trackID == trackId) {
                 return track
             }
         }
@@ -128,7 +129,7 @@ class DatabaseManager private constructor() {
         val result = ArrayList<String>()
 
         for (track in getAllTracks()) {
-            result.add(track.tackId)
+            result.add(track.trackID)
         }
 
         return result
@@ -139,15 +140,15 @@ class DatabaseManager private constructor() {
         val result = ArrayList<String>()
 
         for (track in getTopTracks()) {
-            result.add(track.tackId)
+            result.add(track.trackID)
         }
 
         return result
     }
 
     @Synchronized
-    fun getTopTracks(): List<TrackInfo> {
-        val result = ArrayList<TrackInfo>()
+    fun getTopTracks(): List<Track> {
+        val result = ArrayList<Track>()
 
         for (track in getAllTracks()) {
             if(track.topTrack) {
@@ -159,7 +160,7 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    fun getAllTracks(): List<TrackInfo> {
+    fun getAllTracks(): List<Track> {
         return ArrayList(mDb.tracks)
     }
 
@@ -206,10 +207,19 @@ class DatabaseManager private constructor() {
 
             val jsonStr = stringBuilder.toString()
 
-            mDb = mGson.fromJson(jsonStr, Database::class.java)
+            val database = mGson.fromJson(jsonStr, Database::class.java)
+            if(database.databaseVersion == null || database.databaseVersion != DATABASE_VERSION) {
+                initDB()
+                loadDB()
+            } else {
+                mDb = database
+            }
 
         } catch (e: JsonSyntaxException) {
             Log.e(HOLDER.DATABASE_TAG, "Json file parsing: $e")
+            initDB()
+            loadDB()
+        } catch (e: Exception) {
             initDB()
             loadDB()
         }
@@ -231,7 +241,7 @@ class DatabaseManager private constructor() {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
 
             outputStreamWriter.write(
-                mGson.toJson(Database(HashMap(), HashMap(), ArrayList(), UserSettings(true)))
+                mGson.toJson(Database(DATABASE_VERSION, HashMap(), HashMap(), ArrayList(), UserSettings(true)))
             )
             outputStreamWriter.close()
         } catch (e: IOException) {

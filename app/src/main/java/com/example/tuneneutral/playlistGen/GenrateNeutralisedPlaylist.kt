@@ -146,7 +146,7 @@ class GenrateNeutralisedPlaylist(
         while (trackCandidates.count() < 50 && existingTracks.count() > 0) {
             val nextTrack = DatabaseManager.instance.getTrackInfo(existingTracks.first())
             if(nextTrack != null){
-                trackCandidates[nextTrack.tackId] = nextTrack.valence.round(2).toFloat()
+                trackCandidates[nextTrack.trackID] = nextTrack.valence.round(2).toFloat()
             }
             existingTracks.remove(existingTracks.first())
         }
