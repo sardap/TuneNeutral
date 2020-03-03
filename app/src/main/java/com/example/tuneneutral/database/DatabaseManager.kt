@@ -17,6 +17,7 @@ class DatabaseManager private constructor() {
     }
 
     companion object {
+        private val DATABASE_VERSION = 1
         val instance: DatabaseManager by lazy { HOLDER.INSTANCE }
     }
 
@@ -206,10 +207,19 @@ class DatabaseManager private constructor() {
 
             val jsonStr = stringBuilder.toString()
 
-            mDb = mGson.fromJson(jsonStr, Database::class.java)
+            val database = mGson.fromJson(jsonStr, Database::class.java)
+            if(database.databaseVersion == null || database.databaseVersion != DATABASE_VERSION) {
+                initDB()
+                loadDB()
+            } else {
+                mDb = database
+            }
 
         } catch (e: JsonSyntaxException) {
             Log.e(HOLDER.DATABASE_TAG, "Json file parsing: $e")
+            initDB()
+            loadDB()
+        } catch (e: Exception) {
             initDB()
             loadDB()
         }
@@ -231,7 +241,7 @@ class DatabaseManager private constructor() {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
 
             outputStreamWriter.write(
-                mGson.toJson(Database(HashMap(), HashMap(), ArrayList(), UserSettings(true)))
+                mGson.toJson(Database(DATABASE_VERSION, HashMap(), HashMap(), ArrayList(), UserSettings(true)))
             )
             outputStreamWriter.close()
         } catch (e: IOException) {
