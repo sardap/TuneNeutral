@@ -16,7 +16,7 @@ import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
-import com.example.tuneneutral.fragments.SongDatabase
+import com.example.tuneneutral.fragments.SongDatabaseFragment
 import com.example.tuneneutral.fragments.StatsFragment
 import com.example.tuneneutral.fragments.CalendarFragment
 import com.example.tuneneutral.playlistGen.PullNewTracks
@@ -430,7 +430,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun changeToSongDBFragment() {
-        changeFragment(SongDatabase.newInstance())
+        changeFragment(SongDatabaseFragment.newInstance())
     }
 
     private fun changeToStatsFragment() {

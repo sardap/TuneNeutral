@@ -15,18 +15,15 @@ import com.example.tuneneutral.database.TrackInfo
 import com.example.tuneneutral.fragments.adapters.SongDBListAdapter
 import com.example.tuneneutral.spotify.SpotifyEndpoints
 import com.example.tuneneutral.spotify.SpotifyUserInfo
-import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.fragment_song_database.view.*
 import kotlinx.coroutines.*
-import java.util.concurrent.Semaphore
-import java.util.concurrent.locks.ReentrantLock
 
 /**
  * A simple [Fragment] subclass.
- * Use the [SongDatabase.newInstance] factory method to
+ * Use the [SongDatabaseFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
-class SongDatabase : Fragment() {
+class SongDatabaseFragment : Fragment() {
     private class ViewHolder(view: View) {
         val songsListView: RecyclerView = view.song_list_view
     }
@@ -62,21 +59,10 @@ class SongDatabase : Fragment() {
             this.adapter = adapter
         }
 
-
-        class SongViewModel : ViewModel() {
-            private var mPulledTrackInfo: TrackInfo? = null
-
-            fun populate(accessToken: String, position: Int) {
-                viewModelScope.launch {
-                }
-            }
-
-        }
-
         val uiScope = CoroutineScope(Dispatchers.Main)
         val accessToken = SpotifyUserInfo.SpotifyAccessToken
         if(accessToken != null) {
-            for(i in 0 until dataSet.size) {
+            for(i in dataSet.indices) {
                 uiScope.launch {
                     if(dataSet[i].trackInfo == null) {
                         dataSet[i].trackInfo = getTrackInfo(accessToken, dataSet[i].trackID)
@@ -84,7 +70,6 @@ class SongDatabase : Fragment() {
                     }
 
                 }
-                SongViewModel().populate(accessToken, i)
             }
         }
     }
@@ -97,7 +82,7 @@ class SongDatabase : Fragment() {
     companion object {
         @JvmStatic
         fun newInstance() =
-            SongDatabase().apply {
+            SongDatabaseFragment().apply {
                 arguments = Bundle().apply {
                 }
             }

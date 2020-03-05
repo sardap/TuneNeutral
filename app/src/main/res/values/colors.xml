@@ -23,4 +23,7 @@
     <color name="colorDeufaltText">#000000</color>
     <color name="colorDayTextNotActive">#696969</color>
     <color name="colorPrimayConstrast">#FFFFFF</color>
+
+    <color name="colorDeleteBackground">#DD0000</color>
+    <color name="colorInfoBackground">#0000DD</color>
 </resources>
