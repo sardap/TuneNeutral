@@ -156,7 +156,7 @@ class PullNewTracks(private val mSpotifyAccessToken: String) : Runnable {
         for (track in trackIDs) {
             val trackInfo = getTrackAnaysis(mSpotifyAccessToken, track, topTrack)
             if(trackInfo != null) {
-                DatabaseManager.instance.addTrackInfo(trackInfo)
+                DatabaseManager.instance.addTrack(trackInfo)
             }
         }
     }

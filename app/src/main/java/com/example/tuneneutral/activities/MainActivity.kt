@@ -16,9 +16,10 @@ import com.example.tuneneutral.R
 import com.example.tuneneutral.Uris
 import com.example.tuneneutral.database.DatabaseManager
 import com.example.tuneneutral.fragments.RatingFragment
-import com.example.tuneneutral.fragments.SongDatabase
+import com.example.tuneneutral.fragments.SongDatabaseFragment
 import com.example.tuneneutral.fragments.StatsFragment
 import com.example.tuneneutral.fragments.CalendarFragment
+import com.example.tuneneutral.fragments.adapters.SongDBListAdapter
 import com.example.tuneneutral.playlistGen.PullNewTracks
 import com.example.tuneneutral.spotify.SpotifyConstants
 import com.example.tuneneutral.spotify.SpotifyUserInfo
@@ -43,10 +44,12 @@ class MainActivity : AppCompatActivity(),
         private const val MOVE_DEFAULT_TIME: Long = 1000 / 5
         private const val FADE_DEFAULT_TIME: Long = 300 / 5
         private const val IMPORT_DATABASE_FILE = 31024
+
+        private const val FRAGMENT_CONTAINER_NAME = "FRAGMENT_CONTAINER_NAME"
     }
 
     private enum class State {
-        ShowingCalander, ShowingRating, ShowingStats, ShowingSongDB
+        ShowingCalander, ShowingRating, ShowingStats, ShowingSongDB, ShowingNone
     }
 
     private class SpotifyLoginDialogViewHolder(view: Dialog) {
@@ -58,8 +61,9 @@ class MainActivity : AppCompatActivity(),
         val botNavBar = view.bottom_navigation
     }
 
-    private var mState = State.ShowingCalander
+    private var mState = State.ShowingNone
     private var mSpotifyLoginDialog: Dialog? = null
+    private var mPreviousFragment: Fragment? = null
 
     private lateinit var mSpotifyLoginDialogViewHolder: SpotifyLoginDialogViewHolder
     private lateinit var mFragmentManager: FragmentManager
@@ -80,18 +84,34 @@ class MainActivity : AppCompatActivity(),
                 }
             }
         }
+
+        mFragmentManager = supportFragmentManager
+
+        if(savedInstanceState != null) {
+            mState = State.ShowingSongDB
+            mFragmentManager.getFragment(savedInstanceState, FRAGMENT_CONTAINER_NAME)?.also {
+                changeFragment(it)
+            }
+        } else {
+            mState = State.ShowingCalander
+            refreshFrag()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        mFragmentManager.findFragmentById(R.id.fragment_container)?.also {
+            mFragmentManager.putFragment(outState, FRAGMENT_CONTAINER_NAME, it)
+        }
     }
 
     override fun onStart() {
         super.onStart()
 
-        mFragmentManager = supportFragmentManager
-
         logIntoSpotify()
 
         initBotNavBar()
-
-        refreshFrag()
     }
 
     override fun onResume() {
@@ -430,7 +450,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun changeToSongDBFragment() {
-        changeFragment(SongDatabase.newInstance())
+        changeFragment(SongDatabaseFragment.newInstance())
     }
 
     private fun changeToStatsFragment() {
@@ -446,23 +466,32 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun changeFragment(nextFragment: Fragment) {
-        val previousFragment = mFragmentManager.findFragmentById(R.id.fragment_container)
+        val currentFragment = mFragmentManager.findFragmentById(R.id.fragment_container)
+        val previousFragment = mPreviousFragment
+
+        if(previousFragment != null) {
+            val removeTransaction = mFragmentManager.beginTransaction()
+            removeTransaction.remove(previousFragment)
+            removeTransaction.commit()
+        }
 
         val transaction = mFragmentManager.beginTransaction()
 
-        if(previousFragment != null) {
+        if(currentFragment != null) {
             // TODO Improve so no duplcation
-            if(previousFragment is CalendarFragment) {
+            if(currentFragment is CalendarFragment) {
                 if(nextFragment is RatingFragment) {
                     transaction.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right, 0, 0)
                 } else if (nextFragment is StatsFragment) {
                     transaction.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left, 0, 0)
                 }
-            } else if(previousFragment is RatingFragment && nextFragment is CalendarFragment) {
+            } else if(currentFragment is RatingFragment && nextFragment is CalendarFragment) {
                 transaction.setCustomAnimations(R.animator.slide_in_right, R.animator.slide_out_left, 0, 0)
-            } else if(previousFragment is StatsFragment && nextFragment is CalendarFragment) {
+            } else if(currentFragment is StatsFragment && nextFragment is CalendarFragment) {
                 transaction.setCustomAnimations(R.animator.slide_in_left, R.animator.slide_out_right, 0, 0)
             }
+
+            mPreviousFragment = currentFragment
         }
 
 

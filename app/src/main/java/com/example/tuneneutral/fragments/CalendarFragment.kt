@@ -1,12 +1,16 @@
 package com.example.tuneneutral.fragments
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.icu.text.DateFormatSymbols
+import android.icu.text.SimpleDateFormat
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -36,6 +40,7 @@ import kotlinx.android.synthetic.main.month_header.view.month_title
 import org.threeten.bp.LocalDate
 import org.threeten.bp.temporal.WeekFields
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 
 
@@ -112,6 +117,17 @@ class CalendarFragment : Fragment() {
         listener = null
     }
 
+    private fun moveMonthLeft() {
+        mCurrentDate = mCurrentDate.minusMonths(1)
+        setMonth(mCurrentDate)
+    }
+
+    private fun moveMonthRight() {
+        mCurrentDate = mCurrentDate.plusMonths(1)
+        setMonth(mCurrentDate)
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
     private fun initCalendarView() {
         fun startLoading() {
             mViewHolder.calendarView.visibility = View.GONE
@@ -124,13 +140,11 @@ class CalendarFragment : Fragment() {
         }
 
         mViewHolder.monthLeftButton.setOnClickListener {
-            mCurrentDate = mCurrentDate.minusMonths(1)
-            setMonth(mCurrentDate)
+            moveMonthLeft()
         }
 
         mViewHolder.monthRightButton.setOnClickListener {
-            mCurrentDate = mCurrentDate.plusMonths(1)
-            setMonth(mCurrentDate)
+            moveMonthRight()
         }
 
         class DayViewContainer(view: View) : ViewContainer(view) {
@@ -144,6 +158,36 @@ class CalendarFragment : Fragment() {
 
         val minColorInt =  context!!.getColor(R.color.colorNothing)
         val minColor = Color.parseColor(String.format("#%06X", minColorInt))
+
+        val onTouchListener = object : View.OnTouchListener {
+            private var mX1 = 0f
+
+            override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+                when(event?.action) {
+                    MotionEvent.ACTION_DOWN -> mX1 = event.x
+                    MotionEvent.ACTION_UP -> {
+                        val delta = event.x - mX1
+
+                        if(abs(delta) > 150) {
+                            when {
+                                // Left
+                                delta > 0 -> moveMonthLeft()
+
+                                // Right
+                                delta < 0 -> moveMonthRight()
+                            }
+                        }
+                    }
+
+                }
+
+                v?.performClick()
+                return true
+            }
+
+        }
+
+        mViewHolder.calendarView.setOnTouchListener(onTouchListener)
 
         mViewHolder.calendarView.dayBinder = object : DayBinder<DayViewContainer> {
             // Called only when a new container is needed.
@@ -217,9 +261,7 @@ class CalendarFragment : Fragment() {
 
                 } else {
                     color = context!!.getColor(R.color.colorDayTextNotActive)
-
                     border = context!!.getDrawable(R.drawable.other_month_background_border)!!
-
 
                     resetDayVisibility()
                 }
@@ -260,7 +302,10 @@ class CalendarFragment : Fragment() {
 
         val firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
 
-        val daysOfWeek = arrayOf("sun", "mon", "tue", "wed", "thu", "fri", "sat")
+        val daysOfWeek = DateFormatSymbols().shortWeekdays.toCollection(ArrayList())
+        daysOfWeek.removeAt(0)
+
+
         legend_layout.children.forEachIndexed { index, view ->
             (view as TextView).apply {
                 text = daysOfWeek[index]

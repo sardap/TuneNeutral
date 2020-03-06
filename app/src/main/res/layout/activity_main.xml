@@ -21,7 +21,7 @@
         android:layout_alignParentBottom="true"
         android:layout_gravity="bottom"
         android:background="@color/colorPrimary"
-        app:itemIconTint="@color/colorMenuIconPrimary"
+        app:itemIconTint="@drawable/bottom_navigation_selector"
         app:itemTextColor="@color/colorPrimayConstrast"
         app:menu="@menu/bottom_navigation_menu"
         />

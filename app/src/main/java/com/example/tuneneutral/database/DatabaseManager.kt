@@ -17,7 +17,7 @@ class DatabaseManager private constructor() {
     }
 
     companion object {
-        private val DATABASE_VERSION = 1
+        private val DATABASE_VERSION = 2
         val instance: DatabaseManager by lazy { HOLDER.INSTANCE }
     }
 
@@ -61,7 +61,7 @@ class DatabaseManager private constructor() {
 
     @Synchronized
     fun getUserSettings(): UserSettings {
-        return mDb.UserSettings
+        return mDb.userSettings
     }
 
     @Synchronized
@@ -105,9 +105,24 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
-    fun addTrackInfo(track: Track) {
+    fun addTrack(track: Track) {
         Log.d(HOLDER.DATABASE_TAG, "Adding new track ${track}}")
+        if(mDb.blacklistedTracks.contains(track.trackID)) {
+            Log.d(HOLDER.DATABASE_TAG, "Attempted to add blacklisted track! ${track.trackID}")
+            return
+        }
         mDb.tracks.add(track)
+        writeDB()
+    }
+
+    @Synchronized
+    fun blacklistTrack(track: Track) {
+        Log.d(HOLDER.DATABASE_TAG, "Blacklisting track ${track.trackID}}")
+        mDb.blacklistedTracks.add(track.trackID)
+        if(mDb.tracks.contains(track)) {
+            mDb.tracks.remove(track)
+
+        }
         writeDB()
     }
 
@@ -131,6 +146,8 @@ class DatabaseManager private constructor() {
         for (track in getAllTracks()) {
             result.add(track.trackID)
         }
+
+        result.addAll(mDb.blacklistedTracks)
 
         return result
     }
@@ -192,6 +209,11 @@ class DatabaseManager private constructor() {
     }
 
     @Synchronized
+    private fun updateDB() {
+
+    }
+
+    @Synchronized
     private fun loadDB() {
         try {
             val inputStream: InputStream = mContext.openFileInput(HOLDER.FILE_NAME)
@@ -213,6 +235,7 @@ class DatabaseManager private constructor() {
                 loadDB()
             } else {
                 mDb = database
+                updateDB()
             }
 
         } catch (e: JsonSyntaxException) {
@@ -240,8 +263,17 @@ class DatabaseManager private constructor() {
         try {
             val outputStreamWriter = OutputStreamWriter(mContext.openFileOutput(HOLDER.FILE_NAME, Context.MODE_PRIVATE))
 
+            val database = Database(
+                DATABASE_VERSION,
+                HashMap(),
+                HashMap(),
+                ArrayList(),
+                UserSettings(true),
+                ArrayList()
+            )
+
             outputStreamWriter.write(
-                mGson.toJson(Database(DATABASE_VERSION, HashMap(), HashMap(), ArrayList(), UserSettings(true)))
+                mGson.toJson(database)
             )
             outputStreamWriter.close()
         } catch (e: IOException) {
