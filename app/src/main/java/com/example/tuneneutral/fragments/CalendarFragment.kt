@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.icu.text.DateFormatSymbols
+import android.icu.text.SimpleDateFormat
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
@@ -11,7 +13,9 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.Button
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
@@ -36,6 +40,7 @@ import kotlinx.android.synthetic.main.month_header.view.month_title
 import org.threeten.bp.LocalDate
 import org.threeten.bp.temporal.WeekFields
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 
 
@@ -297,7 +302,10 @@ class CalendarFragment : Fragment() {
 
         val firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
 
-        val daysOfWeek = arrayOf("sun", "mon", "tue", "wed", "thu", "fri", "sat")
+        val daysOfWeek = DateFormatSymbols().shortWeekdays.toCollection(ArrayList())
+        daysOfWeek.removeAt(0)
+
+
         legend_layout.children.forEachIndexed { index, view ->
             (view as TextView).apply {
                 text = daysOfWeek[index]
