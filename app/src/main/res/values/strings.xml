@@ -78,4 +78,13 @@
     <string name="song_view_title">Title: %s</string>
     <string name="song_view_album_title">Album: %s</string>
     <string name="song_view_artists_title">Artists: %s</string>
+
+    <string name="popularity">Popularity: %s</string>
+    <string name="length">Duration: %.2f</string>
+    <string name="valence">Valence: %.2f</string>
+    <string name="tempo">Tempo: %.2f</string>
+    <string name="danceability">Danceability: %.2f</string>
+    <string name="energy">Energy: %.2f</string>
+    <string name="loudness">Loudness: %.2f</string>
+    <string name="key">Key: %d</string>
 </resources>

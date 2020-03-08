@@ -17,15 +17,15 @@
             >
             
             <RelativeLayout
+                android:id="@+id/info_button"
                 android:layout_width="100dp"
                 android:layout_height="match_parent"
                 android:background="@color/colorInfoBackground"
                 >
 
                 <ImageButton
-                    android:id="@+id/info_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
                     android:background="@drawable/ic_info_24px"
                     android:layout_centerInParent="true"
                     android:backgroundTint="@color/colorMenuIconPrimarySelected"
@@ -35,15 +35,15 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/blacklist_button"
                 android:layout_width="100dp"
                 android:layout_height="match_parent"
                 android:background="@color/colorDeleteBackground"
                 >
 
                 <ImageButton
-                    android:id="@+id/blacklist_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
                     android:background="@drawable/ic_delete_24px"
                     android:layout_centerInParent="true"
                     android:backgroundTint="@color/colorMenuIconPrimarySelected"

@@ -1,5 +1,6 @@
 package com.example.tuneneutral.fragments.adapters
 
+import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -14,21 +15,23 @@ import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.song_list_view.view.*
 
 class SongDBListAdapter(
-    private val mDataSet: ArrayList<Track>
+    private val mDataSet: ArrayList<Track>,
+    context: Context
 ) : RecyclerView.Adapter<SongDBListAdapter.ViewHolder>(){
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view){
+    private val mSongInfoDialog = SongInfoDialog(context)
+
+    class ViewHolder(view: View, private val mSongInfoDialog: SongInfoDialog) : RecyclerView.ViewHolder(view){
         private val songCover: ImageView = view.song_cover
         private val songTitle: TextView = view.song_title
         private val songAlbumTitle: TextView = view.album_title
         private val artistsTitle: TextView = view.artists_title
         private val songCoverLoading: ProgressBar = view.song_cover_loading_bar
         private val songPostion: TextView = view.pos_text
-        private val infoButton: ImageButton = view.info_button
-        private val blacklistButton: ImageButton = view.blacklist_button
+        private val infoButton: RelativeLayout = view.info_button
+        private val blacklistButton: RelativeLayout = view.blacklist_button
 
         fun bind(track: Track, position: Int, blacklistClickListener: View.OnClickListener) {
-
             val trackInfo = track.trackInfo
             if(trackInfo != null) {
                 songCoverLoading.visibility = View.GONE
@@ -42,6 +45,8 @@ class SongDBListAdapter(
             }
 
             songCover.setOnClickListener {
+                mSongInfoDialog.bind(track)
+                mSongInfoDialog.show()
                 SpotifyUtiltiy.openTrackInSpotify(itemView.context, track.trackID)
             }
 
@@ -50,7 +55,8 @@ class SongDBListAdapter(
             blacklistButton.setOnClickListener(blacklistClickListener)
 
             infoButton.setOnClickListener {
-                Toast.makeText(itemView.context, "Coming soon", Toast.LENGTH_SHORT).show()
+                mSongInfoDialog.bind(track)
+                mSongInfoDialog.show()
             }
         }
     }
@@ -61,7 +67,8 @@ class SongDBListAdapter(
                 R.layout.song_list_view,
                 parent,
                 false
-            )
+            ),
+            mSongInfoDialog
         )
     }
 

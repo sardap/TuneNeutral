@@ -79,7 +79,7 @@ class SongDatabaseFragment : Fragment() {
         val songsListView = mViewHolder.songsListView
         val dataSet = ArrayList(DatabaseManager.instance.getAllTracks())
 
-        val adapter = SongDBListAdapter(dataSet)
+        val adapter = SongDBListAdapter(dataSet, context!!)
         songsListView.apply {
             layoutManager = LinearLayoutManager(context)
             this.adapter = adapter
