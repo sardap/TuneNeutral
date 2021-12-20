@@ -1,13 +1,13 @@
 <template>
-  <div class="create-playlist">
+  <div>
     <CreatePlaylist @playlist_created="playlistCreated" />
   </div>
 </template>
 
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
-import CreatePlaylist from "@/components/CreatePlaylist.vue";
 import router from "@/router";
+import CreatePlaylist from "@/components/CreatePlaylist.vue";
 
 @Options({
   components: {
@@ -18,14 +18,6 @@ import router from "@/router";
       router.push(`playlist?date=${value}`);
     },
   },
-  data() {
-    return {};
-  },
 })
 export default class Home extends Vue {}
 </script>
-
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-</style>

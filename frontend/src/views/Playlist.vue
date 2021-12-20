@@ -1,0 +1,43 @@
+<template>
+  <div class="playlist">
+    <div v-if="tracks.length > 0">
+      <PlaylistView :tracks="tracks" :date="date" />
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { Options, Vue } from "vue-class-component";
+import PlaylistView from "@/components/PlaylistView.vue"; // @ is an alias to /src
+
+@Options({
+  components: {
+    PlaylistView,
+  },
+  methods: {
+    async getPlaylist() {
+      let response = await fetch(`/v1/api/mood_playlist/${this.date}`);
+      let apiRes = await response.json();
+      this.tracks = apiRes.result.tracks;
+    },
+  },
+  created() {
+    this.getPlaylist();
+  },
+  data() {
+    return {
+      date: this.$route.query.date,
+      tracks: [],
+    };
+  },
+})
+export default class About extends Vue {}
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped>
+.playlist {
+  margin-left: 20%;
+  margin-right: 20%;
+}
+</style>
