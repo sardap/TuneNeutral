@@ -9,7 +9,8 @@
     <div v-if="authenticated">
       <div id="nav">
         <router-link to="/">Create Playlist</router-link> |
-        <router-link to="/playlists">Playlists</router-link>
+        <router-link to="/playlists">Playlists</router-link> |
+        <router-link to="/my_data">My Data</router-link>
       </div>
       <router-view />
     </div>
@@ -59,7 +60,7 @@ import Logout from "@/components/Logout.vue";
 export default class Home extends Vue {}
 </script>
 
-<style >
+<style>
 @import "scss/core.scss";
 
 #app {

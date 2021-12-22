@@ -7,6 +7,10 @@ import (
 	"github.com/zmb3/spotify"
 )
 
+const (
+	DateFormat = "2006-01-02"
+)
+
 type Mood float32
 
 const (
@@ -69,23 +73,16 @@ type UserTracks struct {
 	UserId           string
 	LastOffset       int
 	TrackIds         map[string]float32
+	IgnoredTracks    map[string]interface{}
 	CompletedScan    bool
 	LastTrackScanned *string
 }
 
 type MoodPlaylist struct {
-	Id        string
 	Date      time.Time
 	Tracks    []string
 	StartMood float32
 	EndMood   float32
-}
-
-type User struct {
-	UserId     string
-	Username   string
-	Password   string
-	JoinedDate time.Time
 }
 
 type SpotifyRedirect struct {

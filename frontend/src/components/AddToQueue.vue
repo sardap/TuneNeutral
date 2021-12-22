@@ -2,7 +2,7 @@
   <div>
     <div v-if="loading">loading...</div>
     <div v-else>
-      <div class="button" v-on:click="addToQueue()">Play!</div>
+      <div class="button" v-on:click="addToQueue()">Update Playlist!</div>
     </div>
   </div>
 </template>
@@ -17,7 +17,7 @@ import { Options, Vue } from "vue-class-component";
   methods: {
     async addToQueue() {
       this.loading = true;
-      let response = await fetch(`/v1/api/add_to_queue/${this.date}`, {
+      let response = await fetch(`/v1/api/update_playlist/${this.date}`, {
         method: "POST",
         headers: {
           Accept: "application/json",

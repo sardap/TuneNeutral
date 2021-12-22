@@ -1,7 +1,11 @@
 <template>
   <div class="playlist">
     <div v-if="tracks.length > 0">
-      <PlaylistView :tracks="tracks" :date="date" />
+      <PlaylistView
+        :tracks="tracks"
+        :date="date"
+        :remove_callback="removeTrack"
+      />
     </div>
   </div>
 </template>
@@ -15,6 +19,12 @@ import PlaylistView from "@/components/PlaylistView.vue"; // @ is an alias to /s
     PlaylistView,
   },
   methods: {
+    async removeTrack(trackId: string) {
+      await fetch(`/v1/api/remove_track/${trackId}`, {
+        method: "POST",
+      });
+      alert("That track will not be used anymore.");
+    },
     async getPlaylist() {
       let response = await fetch(`/v1/api/mood_playlist/${this.date}`);
       let apiRes = await response.json();

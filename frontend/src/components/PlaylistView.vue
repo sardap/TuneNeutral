@@ -2,43 +2,59 @@
   <div>
     <row container :gutter="10" :columns="5">
       <column v-for="track in tracks" :key="track.id">
-        <div class="entry">
-          <a :href="`https://open.spotify.com/album/${track.album.id}`">
-            <img
-              :src="track.album.url"
-              width="80"
-              :style="`border: 5px solid ${moodColor(track.mood)}`"
-            />
-          </a>
-          <p>
-            <a :href="`https://open.spotify.com/track/${track.id}`">{{
-              `${track.name}`
-            }}</a>
-            <br />
-          </p>
-        </div>
+        <TrackView :remove_callback="remove_callback" :track="track" />
       </column>
     </row>
-    <AddToQueue :date="date" />
+    <div v-if="update_spotify">
+      <AddToQueue :date="date" v-on:click="update_spotify = false" />
+    </div>
+    <div v-else>
+      <a
+        :href="`https://open.spotify.com/playlist/${spotify_playlist}`"
+        target="_blank"
+        class="button spotify-link"
+      >
+        Open Playlist
+      </a>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { Options, Vue } from "vue-class-component";
 import { BasicTrack } from "@/models";
+import TrackView from "@/components/TrackView.vue";
 import AddToQueue from "@/components/AddToQueue.vue";
-import { moodColor } from "@/models";
 
 @Options({
   props: {
     tracks: Array,
     date: String,
+    remove_callback: Function,
   },
   components: {
+    TrackView,
     AddToQueue,
   },
   methods: {
-    moodColor: moodColor,
+    async getPlaylistId() {
+      let response = await fetch(`/v1/api/spotify_playlist`);
+      if (response.status == 200) {
+        let apiRes = await response.json();
+        if (apiRes.result && apiRes.result.id) {
+          this.spotify_playlist = apiRes.result.id;
+        }
+      }
+    },
+  },
+  created() {
+    this.getPlaylistId();
+  },
+  data() {
+    return {
+      spotify_playlist: "",
+      update_spotify: true,
+    };
   },
 })
 export default class PlaylistView extends Vue {
@@ -49,15 +65,6 @@ export default class PlaylistView extends Vue {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.entry {
-  width: 100px;
-  height: 100%;
-}
-
-.entry img {
-  margin: 5px;
-}
-
 h3 {
   margin: 40px 0 0;
 }
@@ -68,8 +75,5 @@ ul {
 li {
   display: inline-block;
   margin: 0 10px;
-}
-a {
-  color: #42b983;
 }
 </style>

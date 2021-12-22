@@ -18,6 +18,7 @@
 import { Options, Vue } from "vue-class-component";
 import PlaylistsView from "@/components/PlaylistsView.vue";
 import { Calendar } from "v-calendar";
+import { roundMood } from "@/models";
 import router from "@/router";
 
 @Options({
@@ -50,7 +51,7 @@ import router from "@/router";
       }
       this.playlists = apiRes.result.playlists;
       for (let playlist of this.playlists) {
-        let highlight = this.moodColor(playlist.start_mood);
+        let highlight = this.moodColor(roundMood(playlist.start_mood));
         this.attributes.push({
           key: "playlist",
           // Attribute type definitions

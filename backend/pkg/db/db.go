@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/dgraph-io/badger/v3"
@@ -115,6 +116,12 @@ func (d *Database) GetUserTracks(userId string) (tracks *models.UserTracks, err 
 	return
 }
 
+func (d *Database) ClearUserTracks(userId string) error {
+	return d.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete(userTracksKey(userId))
+	})
+}
+
 func userFetchLock(userId string) []byte {
 	return []byte(fmt.Sprintf("user/fetch_lock/%s", userId))
 }
@@ -138,8 +145,14 @@ func (d *Database) UserFetchLocked(userId string) (result bool) {
 	return
 }
 
-func keyMoodPlaylistPrefix(date string) []byte {
-	return []byte(fmt.Sprintf("user/playlist/%s", date))
+func (d *Database) ClearUserFetchLock(userId string) error {
+	return d.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete(userFetchLock(userId))
+	})
+}
+
+func keyMoodPlaylistPrefix(userId string) []byte {
+	return []byte(fmt.Sprintf("user/playlist/%s", userId))
 
 }
 
@@ -155,7 +168,7 @@ func (d *Database) SetMoodPlaylist(userId string, playlist *models.MoodPlaylist)
 		if err != nil {
 			panic(err)
 		}
-		return txn.Set(keyMoodPlaylist(userId, playlist.Date.Format("2006-01-02")), buf.Bytes())
+		return txn.Set(keyMoodPlaylist(userId, playlist.Date.Format(models.DateFormat)), buf.Bytes())
 	})
 }
 
@@ -169,6 +182,36 @@ func (d *Database) GetMoodPlaylist(userId, date string) (playlist *models.MoodPl
 			enc := gob.NewDecoder(bytes.NewBuffer(val))
 			return enc.Decode(&playlist)
 		})
+	})
+	return
+}
+
+func (d *Database) GetMoodPlaylitsBetweenDates(userId string, start, end time.Time) (playlists []*models.MoodPlaylist, err error) {
+	err = d.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+
+		prefix := keyMoodPlaylistPrefix(userId)
+
+		getDate := func(v []byte) time.Time {
+			result, _ := time.Parse(models.DateFormat, strings.Split(string(v), "/")[3])
+			return result
+		}
+
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			date := getDate(it.Item().Key())
+			if (date.After(start) && date.Before(end)) || date == start || date == end {
+				it.Item().Value(func(val []byte) error {
+					enc := gob.NewDecoder(bytes.NewBuffer(val))
+					var playlist models.MoodPlaylist
+					enc.Decode(&playlist)
+					playlists = append(playlists, &playlist)
+					return nil
+				})
+			}
+		}
+
+		return nil
 	})
 	return
 }
@@ -192,6 +235,44 @@ func (d *Database) GetMoodPlaylists(userId string) (playlists []*models.MoodPlay
 		return nil
 	})
 	return
+}
+
+func (d *Database) ClearMoodPlaylists(userId string) error {
+	return d.db.Update(func(txn *badger.Txn) error {
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+
+		prefix := keyMoodPlaylistPrefix(userId)
+
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			txn.Delete(it.Item().Key())
+		}
+		return nil
+	})
+}
+
+func keySpotifyPlaylist(userId string) []byte {
+	return []byte(fmt.Sprintf("user/spotify_playlist/%s", userId))
+}
+
+func (d *Database) GetSpotifyPlaylist(userId string) (playlistId string, err error) {
+	err = d.db.View(func(txn *badger.Txn) error {
+		itm, err := txn.Get(keySpotifyPlaylist(userId))
+		if err != nil {
+			return err
+		}
+
+		data, _ := itm.ValueCopy(nil)
+		playlistId = string(data)
+		return nil
+	})
+	return
+}
+
+func (d *Database) SetSpotifyPlaylist(userId, playlistId string) error {
+	return d.db.Update(func(txn *badger.Txn) error {
+		return txn.Set(keySpotifyPlaylist(userId), []byte(playlistId))
+	})
 }
 
 func authStateKey(id string) []byte {

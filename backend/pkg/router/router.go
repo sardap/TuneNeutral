@@ -2,8 +2,10 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/zmb3/spotify"
 
 	"github.com/gin-contrib/static"
@@ -20,82 +23,31 @@ import (
 	"github.com/sardap/TuneNeutral/backend/pkg/models"
 )
 
-func DumbGetCookie(c *gin.Context, key string) string {
-	result, err := c.Cookie(key)
-	if err != nil {
-		return ""
-	}
-	return result
-}
-
-type IdNamePair struct {
-	Name string `json:"name"`
-	Id   string `json:"id"`
-}
-
-type basicAlbum struct {
-	IdNamePair
-	Url string `json:"url"`
-}
-
-type basicTrack struct {
-	IdNamePair
-	Mood    float32      `json:"mood"`
-	Album   basicAlbum   `json:"album"`
-	Artists []IdNamePair `json:"artists"`
-}
-
-type generateMoodPlaylistRequest struct {
-	Mood float32 `json:"mood"`
-	Date string  `json:"date"`
-}
-
-type generateMoodPlaylistResponse struct {
-}
-
-func generateMoodPlaylistEndpoint(c *gin.Context) {
-	var request generateMoodPlaylistRequest
-	jsonData, _ := ioutil.ReadAll(c.Request.Body)
-	json.Unmarshal(jsonData, &request)
-
-	if request.Date == "" {
-		request.Date = time.Now().Format(time.RFC3339)
-	}
-
-	date, err := time.Parse("2006-01-02", request.Date)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"error": "invalid date",
-		})
-		return
-	}
-
-	_, err = api.GenerateMoodPlaylist(sessions.Default(c), models.Mood(request.Mood), date)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"result": generateMoodPlaylistResponse{},
-	})
-}
-
-func addToQueueEndpoint(c *gin.Context) {
-	err := api.AddToQueue(sessions.Default(c), c.Param("playlist_id"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"result": "success",
-	})
-}
-
 var (
 	errNotAuth = fmt.Errorf("not auth")
 )
+
+func processApiError(c *gin.Context, err error) {
+	if errors.Is(err, api.ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{})
+	} else {
+		id, _ := uuid.NewV4()
+		log.Printf("Internal server error(%s): %v", id.String(), errors.Unwrap(err))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"reference_code": id.String(),
+		})
+	}
+}
+
+func authEndpoint(c *gin.Context) {
+	api.AuthStart(c)
+}
+
+func logoutEndpoint(c *gin.Context) {
+	session := sessions.Default(c)
+	api.Logout(session)
+	c.Redirect(http.StatusTemporaryRedirect, "/")
+}
 
 func getToken(session sessions.Session) ([]byte, error) {
 	result, ok := session.Get(api.TokenKey).([]byte)
@@ -151,9 +103,16 @@ func authenticatedEndpoint(c *gin.Context) {
 	}
 }
 
+func authMiddleware(c *gin.Context) {
+	if isAuthenticated(c) {
+		c.Next()
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{})
+	}
+}
+
 type basicPlaylist struct {
 	Date      string  `json:"date"`
-	Id        string  `json:"id"`
 	StartMood float32 `json:"start_mood"`
 }
 
@@ -166,7 +125,7 @@ func getMoodPlaylistsEndpoint(c *gin.Context) {
 
 	playlists, err := api.GetPlaylists(userId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		processApiError(c, err)
 		return
 	}
 
@@ -174,7 +133,6 @@ func getMoodPlaylistsEndpoint(c *gin.Context) {
 	for _, playlist := range playlists {
 		basicPlaylist := basicPlaylist{
 			Date:      playlist.Date.Format(time.RFC3339),
-			Id:        playlist.Id,
 			StartMood: playlist.StartMood,
 		}
 
@@ -184,6 +142,23 @@ func getMoodPlaylistsEndpoint(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"result": response,
 	})
+}
+
+type IdNamePair struct {
+	Name string `json:"name"`
+	Id   string `json:"id"`
+}
+
+type basicAlbum struct {
+	IdNamePair
+	Url string `json:"url"`
+}
+
+type basicTrack struct {
+	IdNamePair
+	Mood    float32      `json:"mood"`
+	Album   basicAlbum   `json:"album"`
+	Artists []IdNamePair `json:"artists"`
 }
 
 type getPlaylistResponse struct {
@@ -196,7 +171,7 @@ func getMoodPlaylistEndpoint(c *gin.Context) {
 
 	playlist, err := api.GetPlaylist(userId, c.Param("date"))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{})
+		processApiError(c, err)
 		return
 	}
 
@@ -238,22 +213,185 @@ func getMoodPlaylistEndpoint(c *gin.Context) {
 	})
 }
 
-func authEndpoint(c *gin.Context) {
-	api.AuthStart(c)
+type getRemovedTracksResponse struct {
+	Tracks []basicTrack `json:"tracks"`
 }
 
-func logoutEndpoint(c *gin.Context) {
-	session := sessions.Default(c)
-	api.Logout(session)
-	c.Redirect(http.StatusTemporaryRedirect, "/")
-}
+func getRemovedTracksEndpoint(c *gin.Context) {
+	userId, _, _ := getUser(c)
 
-func authMiddleware(c *gin.Context) {
-	if isAuthenticated(c) {
-		c.Next()
-	} else {
-		c.JSON(http.StatusUnauthorized, gin.H{})
+	tracks, err := api.GetRemovedTracksForUser(userId)
+	if err != nil {
+		processApiError(c, err)
+		return
 	}
+
+	response := getRemovedTracksResponse{}
+	for _, track := range tracks {
+		track, err := db.Db.GetTrack(track)
+		if err != nil {
+			continue
+		}
+		basicTrack := basicTrack{
+			IdNamePair: IdNamePair{
+				Name: track.Name,
+				Id:   track.Id,
+			},
+			Mood: float32(models.ValenceMoodCategory(track.Valence - 0.5)),
+			Album: basicAlbum{
+				IdNamePair: IdNamePair{
+					Name: track.AlbumId,
+					Id:   track.AlbumId,
+				},
+				Url: track.AlbumArtUrl,
+			},
+		}
+
+		for _, artist := range track.Artists {
+			basicTrack.Artists = append(basicTrack.Artists, IdNamePair{
+				Name: artist.Name,
+				Id:   string(artist.ID),
+			})
+		}
+
+		response.Tracks = append(response.Tracks, basicTrack)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": response,
+	})
+}
+
+type getSpotifyPlaylist struct {
+	Id string `json:"id"`
+}
+
+func getSpotifyPlaylistEndpoint(c *gin.Context) {
+	userId, _, _ := getUser(c)
+
+	playlistId, _ := db.Db.GetSpotifyPlaylist(userId)
+
+	response := getSpotifyPlaylist{
+		Id: playlistId,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": response,
+	})
+}
+
+type getAllDataResponse struct {
+	UserTracks    *models.UserTracks
+	MoodPlaylists []*models.MoodPlaylist
+	FetchLocked   bool
+}
+
+func getAllData(c *gin.Context) {
+	userId, _, _ := getUser(c)
+
+	userTracks, _ := db.Db.GetUserTracks(userId)
+	moodPlaylist, _ := db.Db.GetMoodPlaylists(userId)
+
+	response := getAllDataResponse{
+		UserTracks:    userTracks,
+		MoodPlaylists: moodPlaylist,
+		FetchLocked:   db.Db.UserFetchLocked(userId),
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": response,
+	})
+}
+
+type generateMoodPlaylistRequest struct {
+	Mood float32 `json:"mood"`
+	Date string  `json:"date"`
+}
+
+type generateMoodPlaylistResponse struct {
+}
+
+func generateMoodPlaylistEndpoint(c *gin.Context) {
+	var request generateMoodPlaylistRequest
+	jsonData, _ := ioutil.ReadAll(c.Request.Body)
+	json.Unmarshal(jsonData, &request)
+
+	if request.Date == "" {
+		request.Date = time.Now().Format(time.RFC3339)
+	}
+
+	date, err := time.Parse("2006-01-02", request.Date)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"error": "invalid date",
+		})
+		return
+	}
+
+	userId, client, _ := getUser(c)
+
+	_, err = api.GenerateMoodPlaylist(userId, client, models.Mood(request.Mood), date)
+	if err != nil {
+		processApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": generateMoodPlaylistResponse{},
+	})
+}
+
+func updateTunePlaylistEndpoint(c *gin.Context) {
+	userId, client, _ := getUser(c)
+
+	err := api.UpdatePlaylist(userId, client, c.Param("playlist_id"))
+	if err != nil {
+		processApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "success",
+	})
+}
+
+func removeTrackEndpoint(c *gin.Context) {
+	userId, _, _ := getUser(c)
+
+	err := api.RemoveTrackFromUser(userId, c.Param("track_id"))
+	if err != nil {
+		processApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "success",
+	})
+}
+
+func unremoveTrackEndpoint(c *gin.Context) {
+	userId, _, _ := getUser(c)
+
+	err := api.UnremoveTrackFromUser(userId, c.Param("track_id"))
+	if err != nil {
+		processApiError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "success",
+	})
+}
+
+func removeAllUserData(c *gin.Context) {
+	userId, _, _ := getUser(c)
+
+	api.ClearUserData(userId)
+	api.Logout(sessions.Default(c))
+
+	c.JSON(http.StatusOK, gin.H{
+		"result": "success",
+	})
 }
 
 func CreateRouter(cfg *config.Config) *gin.Engine {
@@ -276,8 +414,14 @@ func CreateRouter(cfg *config.Config) *gin.Engine {
 	{
 		v1Authenticated.GET("/mood_playlists", getMoodPlaylistsEndpoint)
 		v1Authenticated.GET("/mood_playlist/:date", getMoodPlaylistEndpoint)
+		v1Authenticated.GET("/removed_tracks", getRemovedTracksEndpoint)
+		v1Authenticated.GET("/spotify_playlist", getSpotifyPlaylistEndpoint)
+		v1Authenticated.GET("/all_data", getAllData)
 		v1Authenticated.POST("/generate_mood_playlist", generateMoodPlaylistEndpoint)
-		v1Authenticated.POST("/add_to_queue/:playlist_id", addToQueueEndpoint)
+		v1Authenticated.POST("/update_playlist/:playlist_id", updateTunePlaylistEndpoint)
+		v1Authenticated.POST("/remove_track/:track_id", removeTrackEndpoint)
+		v1Authenticated.POST("/unremove_track/:track_id", unremoveTrackEndpoint)
+		v1Authenticated.DELETE("/remove_all_user_data", removeAllUserData)
 	}
 
 	_, err := os.Stat(cfg.WebsiteFilesPath)
