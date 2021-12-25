@@ -12,7 +12,7 @@
         <img
           v-on:click="remove_callback(track.id)"
           class="ignore"
-          src="http://cdn.onlinewebfonts.com/svg/img_384828.png"
+          src="@/assets/remove_icon.png"
           width="20"
         />
       </div>

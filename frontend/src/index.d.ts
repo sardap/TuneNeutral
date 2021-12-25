@@ -14,3 +14,7 @@ declare module 'v-calendar' {
   export declare class Calendar { };
   export declare class DatePicker { };
 }
+
+declare module 'vue3-burger-menu' {
+  export declare class Slide { };
+}

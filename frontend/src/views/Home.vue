@@ -1,5 +1,6 @@
 <template>
   <div class="create-playlist">
+    <h2>Report A Feeling</h2>
     <CreatePlaylist @playlist_created="playlistCreated" />
   </div>
 </template>

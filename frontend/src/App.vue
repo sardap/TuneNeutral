@@ -7,22 +7,70 @@
       blur="3px"
     />
     <div v-if="authenticated">
-      <div id="nav">
-        <router-link to="/">Create Playlist</router-link> |
-        <router-link to="/playlists">Playlists</router-link> |
-        <router-link to="/my_data">My Data</router-link>
+      <div class="navbar">
+        <div class="content">
+          <div class="desktop" v-if="is_desktop">
+            <div id="icon-desktop">
+              <a href="/">
+                <img src="@/assets/icon.png" height="60" />
+              </a>
+            </div>
+            <div id="links">
+              <div id="nav">
+                <router-link to="/">Report Mood</router-link> |
+                <router-link to="/playlists">Playlists</router-link> |
+                <router-link to="/my_data">My Data</router-link>
+              </div>
+            </div>
+            <div id="logout">
+              <Logout />
+            </div>
+          </div>
+          <div class="mobile menu" v-else>
+            <div id="icon-desktop" v-if="!menu_open">
+              <a href="/">
+                <img src="@/assets/icon.png" height="60" />
+              </a>
+            </div>
+            <Slide
+              right
+              :closeOnNavigation="true"
+              class="tune"
+              @openMenu="menu_open = true"
+              @closeMenu="menu_open = false"
+            >
+              <span>
+                <a href="/">
+                  <img src="@/assets/icon.png" height="50" />
+                </a>
+              </span>
+              <span>
+                <router-link to="/">Report Mood</router-link>
+              </span>
+              <span>
+                <router-link to="/playlists">Playlists</router-link>
+              </span>
+              <span>
+                <router-link to="/my_data">My Data</router-link>
+              </span>
+              <span>
+                <Logout />
+              </span>
+            </Slide>
+          </div>
+        </div>
       </div>
-      <router-view />
+      <div id="content">
+        <router-view />
+      </div>
     </div>
-    <div v-else>
-      <h1>Tune Neutral</h1>
-      <div class="center">
+    <div v-else class="center">
+      <div>
+        <img src="@/assets/icon.png" height="120" />
+        <h1>Tune Neutral</h1>
         <a href="auth" class="button get-started">Get started</a>
       </div>
     </div>
-  </div>
-  <div class="footer">
-    <Logout v-if="authenticated" />
   </div>
 </template>
 
@@ -31,11 +79,13 @@ import { Options, Vue } from "vue-class-component";
 import Loading from "vue-loading-overlay";
 import "vue-loading-overlay/dist/vue-loading.css";
 import Logout from "@/components/Logout.vue";
+import { Slide } from "vue3-burger-menu";
 
 @Options({
   components: {
     Loading,
     Logout,
+    Slide,
   },
   methods: {
     async updateAuthenticated() {
@@ -46,14 +96,25 @@ import Logout from "@/components/Logout.vue";
         this.authenticated = true;
       }
     },
+    refreshSize() {
+      this.is_desktop = window.innerWidth >= 600;
+    },
   },
   created() {
+    this.refreshSize();
     this.updateAuthenticated();
+    window.addEventListener("resize", this.refreshSize);
   },
+  destroyed() {
+    window.removeEventListener("resize", this.refreshSize);
+  },
+
   data() {
     return {
       loading: false,
       authenticated: false,
+      is_desktop: false,
+      menu_open: false,
     };
   },
 })
@@ -62,9 +123,10 @@ export default class Home extends Vue {}
 
 <style>
 @import "scss/core.scss";
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400&display=swap");
 
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Josefin Sans", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -91,5 +153,111 @@ export default class Home extends Vue {}
   text-align: center;
   min-height: 100vh;
   margin: -20%;
+}
+
+#content {
+  margin-top: 130px;
+}
+
+.navbar {
+  background-color: #efecc5;
+  border: 5px solid #ddefc5;
+  position: fixed; /* fixing the position takes it out of html flow - knows
+                   nothing about where to locate itself except by browser
+                  coordinates */
+  left: 0; /* top left corner should start at leftmost spot */
+  top: 0; /* top left corner should start at topmost spot */
+  width: 100vw; /* take up the full browser width */
+  z-index: 200; /* high z index so other content scrolls underneath */
+  height: 70px; /* define height for content */
+}
+
+.navbar .content {
+  margin-top: 5px;
+  margin-left: 2px;
+  margin-right: 50px;
+}
+
+#icon-desktop {
+  float: left;
+}
+
+#icon-mobile {
+  float: right;
+}
+
+.navbar #links {
+  float: left;
+}
+
+.navbar #logout {
+  float: right;
+  margin-top: 20px;
+}
+
+.get-started {
+  font-size: 25px;
+}
+
+.mobile .menu {
+  clear: left;
+  float: right;
+}
+
+.tune .bm-burger-button {
+  left: initial;
+  right: 36px;
+  top: 20px;
+}
+
+.bm-burger-bars {
+  background-color: #373a47;
+}
+.line-style {
+  position: absolute;
+  height: 20%;
+  left: 0;
+  right: 0;
+}
+.cross-style {
+  position: absolute;
+  top: 12px;
+  right: 2px;
+  cursor: pointer;
+}
+.bm-cross {
+  background: #bdc3c7;
+}
+.bm-cross-button {
+  height: 24px;
+  width: 24px;
+}
+.tune .bm-menu {
+  height: 100%; /* 100% Full-height */
+  width: 0; /* 0 width - change this with JavaScript */
+  position: fixed; /* Stay in place */
+  z-index: 1000; /* Stay on top */
+  top: 0;
+  left: 0;
+  background-color: #e4df9d; /* Black*/
+  overflow-x: hidden; /* Disable horizontal scroll */
+  padding-top: 60px; /* Place content 60px from the top */
+  transition: 0.5s; /*0.5 second transition effect to slide in the sidenav*/
+}
+
+.bm-item-list {
+  color: #b8b7ad;
+  margin-left: 10%;
+  font-size: 20px;
+}
+.bm-item-list > * {
+  display: flex;
+  text-decoration: none;
+  padding: 0.7em;
+}
+.bm-item-list > * > span {
+  margin-left: 10px;
+  font-weight: 700;
+  color: white;
 }
 </style>

@@ -5,6 +5,15 @@
         <TrackView :remove_callback="remove_callback" :track="track" />
       </column>
     </row>
+    <div>
+      <div v-if="note">
+        <h3>Note</h3>
+        <p>{{ note }}</p>
+      </div>
+      <div v-else>
+        <p>No note for this day</p>
+      </div>
+    </div>
     <div v-if="update_spotify">
       <AddToQueue :date="date" v-on:click="update_spotify = false" />
     </div>
@@ -30,6 +39,7 @@ import AddToQueue from "@/components/AddToQueue.vue";
   props: {
     tracks: Array,
     date: String,
+    note: String,
     remove_callback: Function,
   },
   components: {
@@ -60,6 +70,7 @@ import AddToQueue from "@/components/AddToQueue.vue";
 export default class PlaylistView extends Vue {
   tracks!: BasicTrack[];
   date!: string;
+  note!: string;
 }
 </script>
 

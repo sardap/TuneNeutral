@@ -258,7 +258,7 @@ func feelNothingYet(mood models.Mood) bool {
 	return mood > models.MoodNothing-models.Mood(0.05) && mood < models.MoodNothing+models.Mood(0.05)
 }
 
-func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood models.Mood, date time.Time) (*models.MoodPlaylist, error) {
+func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood models.Mood, date time.Time, note string) (*models.MoodPlaylist, error) {
 	if err := fetchNextUserTracks(userId, client); err != nil {
 		return nil, err
 	}
@@ -295,13 +295,15 @@ func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood model
 
 	result := &models.MoodPlaylist{
 		Date: date,
+		Note: &note,
 	}
 
 	feelNothing := false
 
 	steps := make(map[models.Mood][]*entry)
 	for _, entry := range entries {
-		steps[models.ValenceMoodCategory(transformValence(entry.valence))] = append(steps[models.ValenceMoodCategory(transformValence(entry.valence))], entry)
+		steps[models.ValenceMoodCategory(transformValence(entry.valence))] =
+			append(steps[models.ValenceMoodCategory(transformValence(entry.valence))], entry)
 	}
 
 	for mood := range steps {

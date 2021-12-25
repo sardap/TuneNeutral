@@ -1,5 +1,6 @@
 <template>
   <div class="home">
+    <h2>Playlists</h2>
     <div v-if="playlists.length > 0">
       <Calendar
         :attributes="attributes"

@@ -114,6 +114,7 @@ func authMiddleware(c *gin.Context) {
 type basicPlaylist struct {
 	Date      string  `json:"date"`
 	StartMood float32 `json:"start_mood"`
+	Note      *string `json:"note"`
 }
 
 type getPlaylistsResponse struct {
@@ -134,6 +135,7 @@ func getMoodPlaylistsEndpoint(c *gin.Context) {
 		basicPlaylist := basicPlaylist{
 			Date:      playlist.Date.Format(time.RFC3339),
 			StartMood: playlist.StartMood,
+			Note:      playlist.Note,
 		}
 
 		response.Playlists = append(response.Playlists, basicPlaylist)
@@ -164,6 +166,7 @@ type basicTrack struct {
 type getPlaylistResponse struct {
 	Tracks    []basicTrack `json:"tracks"`
 	StartMood float32      `json:"start_mood"`
+	Note      *string      `json:"note"`
 }
 
 func getMoodPlaylistEndpoint(c *gin.Context) {
@@ -177,6 +180,7 @@ func getMoodPlaylistEndpoint(c *gin.Context) {
 
 	response := getPlaylistResponse{
 		StartMood: playlist.StartMood,
+		Note:      playlist.Note,
 	}
 	for _, track := range playlist.Tracks {
 		track, err := db.Db.GetTrack(track)
@@ -306,6 +310,7 @@ func getAllData(c *gin.Context) {
 type generateMoodPlaylistRequest struct {
 	Mood float32 `json:"mood"`
 	Date string  `json:"date"`
+	Note string  `json:"note"`
 }
 
 type generateMoodPlaylistResponse struct {
@@ -330,7 +335,7 @@ func generateMoodPlaylistEndpoint(c *gin.Context) {
 
 	userId, client, _ := getUser(c)
 
-	_, err = api.GenerateMoodPlaylist(userId, client, models.Mood(request.Mood), date)
+	_, err = api.GenerateMoodPlaylist(userId, client, models.Mood(request.Mood), date, request.Note)
 	if err != nil {
 		processApiError(c, err)
 		return

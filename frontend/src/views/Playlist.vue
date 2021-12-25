@@ -1,9 +1,11 @@
 <template>
   <div class="playlist">
+    <h2>Mood For: {{ date }}</h2>
     <div v-if="tracks.length > 0">
       <PlaylistView
         :tracks="tracks"
         :date="date"
+        :note="note"
         :remove_callback="removeTrack"
       />
     </div>
@@ -29,6 +31,7 @@ import PlaylistView from "@/components/PlaylistView.vue"; // @ is an alias to /s
       let response = await fetch(`/v1/api/mood_playlist/${this.date}`);
       let apiRes = await response.json();
       this.tracks = apiRes.result.tracks;
+      this.note = apiRes.result.note;
     },
   },
   created() {
@@ -38,6 +41,7 @@ import PlaylistView from "@/components/PlaylistView.vue"; // @ is an alias to /s
     return {
       date: this.$route.query.date,
       tracks: [],
+      note: null,
     };
   },
 })

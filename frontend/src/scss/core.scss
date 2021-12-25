@@ -1,6 +1,6 @@
 .button {
-  color: #ffffff;
-  background-color: #4eb5f1;
+  color: black;
+  background-color: #E9b1d4;
   cursor: pointer;
   display: inline-block;
   padding: 0.3em 1.2em;
@@ -14,5 +14,15 @@
 }
 
 .button:hover {
-  background-color: #4095c6;
+  background-color: #d875b3;
+}
+
+body {
+  background: #f5faed;
+  height: 100%;
+  margin-bottom:50px;
+}
+
+body.bm-overlay {
+  background: #f5faed;
 }

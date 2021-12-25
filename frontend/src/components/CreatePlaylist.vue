@@ -22,10 +22,12 @@
           :process="process"
         />
       </div>
-      <label for="date">Date:</label><br />
-      <input v-model="date" name="date" placeholder="" />
       <p>Current Mood: {{ moodToString(this.mood) }}</p>
-      <div class="button" v-on:click="createPlaylist()">Create playlist</div>
+      <label for="note">Note:</label><br />
+      <textarea id="note" v-model="note" name="note" placeholder="" /><br />
+      <label for="date">Date:</label><br />
+      <input v-model="date" name="date" placeholder="" /><br />
+      <div class="button" v-on:click="createPlaylist()">Report Mood</div>
     </div>
   </div>
 </template>
@@ -53,7 +55,11 @@ import "vue-slider-component/theme/default.css";
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ mood: this.mood, date: this.date }),
+        body: JSON.stringify({
+          mood: this.mood,
+          date: this.date,
+          note: this.note,
+        }),
       });
       const apiRes = await response.json();
       this.is_loading = false;
@@ -97,6 +103,13 @@ import "vue-slider-component/theme/default.css";
       "Good-looking",
       "Fine Thing",
       "Symmetrical Face",
+      "Shit for Brains",
+      "Cunt",
+      "Mate",
+      "Dick Head",
+      "Fuck Face",
+      "Garbage Brains",
+      "Dude",
     ];
 
     return {
@@ -104,15 +117,18 @@ import "vue-slider-component/theme/default.css";
       is_loading: false,
       compliment: compliments[(Math.random() * compliments.length) | 0],
       loading_colour: moodColor(0.0),
+      note: "",
       date: `${date.getFullYear()}-${(date.getMonth() + 1)
         .toString()
         .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`,
       marks: {
-        "-0.25": "😭",
-        "-0.125": "😢",
+        "-0.5": "😭",
+        "-0.25": "😢",
+        "-0.125": "😞",
         "0": "😑",
         "0.125": "😊",
         "0.25": "😆",
+        "0.5": "🤗",
       },
       process: (dotsPos: number[]) => {
         return [
@@ -178,5 +194,15 @@ li {
 }
 a {
   color: #42b983;
+}
+
+#note {
+  width: 80%;
+  height: 100px;
+}
+
+.button {
+  margin-top: 40px;
+  font-size: 20px;
 }
 </style>

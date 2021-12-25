@@ -83,6 +83,7 @@ type MoodPlaylist struct {
 	Tracks    []string
 	StartMood float32
 	EndMood   float32
+	Note      *string
 }
 
 type SpotifyRedirect struct {
