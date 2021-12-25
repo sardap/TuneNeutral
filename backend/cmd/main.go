@@ -20,8 +20,8 @@ func main() {
 
 	flag.StringVar(&cfg.ClientId, "spotify-client-id", "", "spotify client id")
 	flag.StringVar(&cfg.ClientSecret, "spotify-client-secret", "", "spotify client secert")
-	flag.StringVar(&cfg.Domain, "domain", "localhost:8080", "domain")
 	flag.StringVar(&cfg.Scheme, "scheme", "http", "http scheme")
+	flag.StringVar(&cfg.Domain, "domain", "localhost:8080", "domain")
 	flag.StringVar(&cfg.DatabasePath, "database-path", "database", "database path")
 	flag.StringVar(&cfg.WebsiteFilesPath, "website-file-path", "", "static website file path")
 	flag.StringVar(&cfg.CookieAuthSecert, "cookie_auth_secret", "", "")
