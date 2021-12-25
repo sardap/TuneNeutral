@@ -25,6 +25,7 @@
             <div id="logout">
               <Logout />
             </div>
+            <p id="version">v{{ version }}</p>
           </div>
           <div class="mobile menu" v-else>
             <div id="icon-desktop" v-if="!menu_open">
@@ -56,6 +57,7 @@
               <span>
                 <Logout />
               </span>
+              <span> v{{ version }} </span>
             </Slide>
           </div>
         </div>
@@ -80,6 +82,7 @@ import Loading from "vue-loading-overlay";
 import "vue-loading-overlay/dist/vue-loading.css";
 import Logout from "@/components/Logout.vue";
 import { Slide } from "vue3-burger-menu";
+import { version } from "@/version";
 
 @Options({
   components: {
@@ -97,7 +100,7 @@ import { Slide } from "vue3-burger-menu";
       }
     },
     refreshSize() {
-      this.is_desktop = window.innerWidth >= 600;
+      this.is_desktop = window.innerWidth >= 630;
     },
   },
   created() {
@@ -115,6 +118,7 @@ import { Slide } from "vue3-burger-menu";
       authenticated: false,
       is_desktop: false,
       menu_open: false,
+      version: version,
     };
   },
 })
@@ -259,5 +263,10 @@ export default class Home extends Vue {}
   margin-left: 10px;
   font-weight: 700;
   color: white;
+}
+
+.desktop #version {
+  float: left;
+  margin-top: 30px;
 }
 </style>
