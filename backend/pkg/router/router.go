@@ -40,6 +40,11 @@ func processApiError(c *gin.Context, err error) {
 }
 
 func authEndpoint(c *gin.Context) {
+	if c.Query("terms_and_conditions") != "true" {
+		c.JSON(http.StatusUnauthorized, gin.H{})
+		return
+	}
+
 	api.AuthStart(c)
 }
 

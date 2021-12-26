@@ -70,7 +70,35 @@
       <div>
         <img src="@/assets/icon.png" height="120" />
         <h1>Tune Neutral</h1>
-        <a href="auth" class="button get-started">Get started</a>
+        <div>
+          <div class="terms_and_conditions">
+            <input
+              type="checkbox"
+              name="terms_and_conditions"
+              v-model="terms_and_conditions"
+            />
+            <label
+              for="terms_and_conditions"
+              v-on:click="terms_and_conditions = !terms_and_conditions"
+            >
+              I Agree that I am over 13 and That I Consent to Tune Neutral
+              storing my liked tracks information and user id from
+              Spotify.</label
+            >
+          </div>
+          <br />
+          <br />
+          <div
+            :key="terms_and_conditions"
+            :class="`button get-started ${
+              terms_and_conditions ? `active` : `inactive`
+            }`"
+            v-on:click="getStarted()"
+          >
+            Get started
+          </div>
+        </div>
+        <About />
       </div>
     </div>
   </div>
@@ -83,14 +111,21 @@ import "vue-loading-overlay/dist/vue-loading.css";
 import Logout from "@/components/Logout.vue";
 import { Slide } from "vue3-burger-menu";
 import { version } from "@/version";
+import About from "@/components/About.vue";
 
 @Options({
   components: {
     Loading,
     Logout,
     Slide,
+    About,
   },
   methods: {
+    getStarted() {
+      if (this.terms_and_conditions) {
+        window.location.href = `/auth?terms_and_conditions=${this.terms_and_conditions}`;
+      }
+    },
     async updateAuthenticated() {
       this.loading = true;
       let response = await fetch(`/v1/api/authenticated`);
@@ -119,6 +154,7 @@ import { version } from "@/version";
       is_desktop: false,
       menu_open: false,
       version: version,
+      terms_and_conditions: false,
     };
   },
 })
@@ -155,8 +191,7 @@ export default class Home extends Vue {}
   justify-content: center;
   align-items: center;
   text-align: center;
-  min-height: 100vh;
-  margin: -20%;
+  margin-top: 5%;
 }
 
 #content {
@@ -268,5 +303,20 @@ export default class Home extends Vue {}
 .desktop #version {
   float: left;
   margin-top: 30px;
+}
+
+.inactive {
+  cursor: default;
+  background-color: #cdc2c9;
+}
+
+.inactive:hover {
+  cursor: default;
+  background-color: #cdc2c9;
+}
+
+.terms_and_conditions {
+  margin-left: 20%;
+  margin-right: 20%;
 }
 </style>
