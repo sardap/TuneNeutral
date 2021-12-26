@@ -205,4 +205,8 @@ a {
   margin-top: 40px;
   font-size: 20px;
 }
+
+textarea {
+  font-family: "Josefin Sans", sans-serif;
+}
 </style>
