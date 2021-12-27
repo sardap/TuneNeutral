@@ -1,13 +1,16 @@
 package router
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -404,11 +407,47 @@ func removeAllUserData(c *gin.Context) {
 	})
 }
 
+func blockBadIps(c *gin.Context) {
+	if db.Db.IsIpGood(c.ClientIP()) {
+		c.Next()
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{})
+	}
+}
+
+func getIps() []string {
+	buf := &bytes.Buffer{}
+
+	resp, err := http.Get("https://raw.githubusercontent.com/stamparm/ipsum/master/levels/1.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	io.Copy(buf, resp.Body)
+
+	return strings.Split(buf.String(), "\n")
+}
+
+func badIpPuller() {
+	for {
+		ips := getIps()
+		for _, ip := range ips {
+			db.Db.SetBadIp(ip, time.Hour*24+time.Minute*30)
+		}
+
+		time.Sleep(time.Hour * 24)
+	}
+}
+
 func CreateRouter(cfg *config.Config) *gin.Engine {
+	go badIpPuller()
+
 	r := gin.Default()
 
 	store := cookie.NewStore([]byte(cfg.CookieAuthSecert), []byte(cfg.CookieEyncSecert))
 	r.Use(sessions.Sessions("tune", store))
+	r.Use(blockBadIps)
 
 	r.GET("/callback", api.RedirectEndpoint)
 	r.GET("/auth", authEndpoint)

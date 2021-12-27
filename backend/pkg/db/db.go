@@ -317,6 +317,27 @@ func (d *Database) GetAuthState(state string) (result string, err error) {
 	return
 }
 
+func ipKey(ip string) []byte {
+	return []byte(fmt.Sprintf("bad/ips/%s", ip))
+}
+
+func (d *Database) SetBadIp(ip string, expire time.Duration) error {
+	return d.db.Update(func(txn *badger.Txn) error {
+		entry := badger.NewEntry(ipKey(ip), []byte{})
+		entry.ExpiresAt = uint64(time.Now().Add(expire).Unix())
+		return txn.SetEntry(entry)
+	})
+}
+
+func (d *Database) IsIpGood(ip string) (result bool) {
+	d.db.View(func(txn *badger.Txn) error {
+		_, err := txn.Get(ipKey(ip))
+		result = err == badger.ErrKeyNotFound
+		return nil
+	})
+	return
+}
+
 func ConnectDb(cfg *config.Config) {
 	Db = &Database{}
 
