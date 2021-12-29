@@ -172,7 +172,7 @@ func fetchNextUserTracks(userId string, client *spotify.Client) error {
 	if err == badger.ErrKeyNotFound {
 		userTracks = &models.UserTracks{
 			UserId:   userId,
-			TrackIds: make(map[string]float32),
+			TrackIds: make(map[string]models.MinTrack),
 		}
 	}
 
@@ -222,6 +222,7 @@ func fetchNextUserTracks(userId string, client *spotify.Client) error {
 			Id:               string(track.ID),
 			Name:             track.Name,
 			Valence:          feature.Valence,
+			Energy:           feature.Energy,
 			AvailableMarkets: marketsMap,
 			AlbumId:          track.Album.ID.String(),
 			Artists:          track.Artists,
@@ -233,7 +234,7 @@ func fetchNextUserTracks(userId string, client *spotify.Client) error {
 
 		db.Db.PutTrack(&modelTrack)
 
-		userTracks.TrackIds[modelTrack.Id] = modelTrack.Valence
+		userTracks.TrackIds[modelTrack.Id] = models.MinTrack{Valence: modelTrack.Valence, Energy: modelTrack.Energy}
 	}
 
 	if userTracks.LastOffset >= userTracksResponse.Total {
@@ -280,16 +281,18 @@ func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood model
 	type entry struct {
 		id      string
 		valence float32
+		energy  float32
 	}
 	entries := make([]*entry, 0)
-	for id, valence := range userTracks.TrackIds {
+	for id, minTrack := range userTracks.TrackIds {
 		if _, ok := ignoreTracks[id]; ok {
 			continue
 		}
 
 		entries = append(entries, &entry{
 			id:      id,
-			valence: valence,
+			valence: minTrack.Valence,
+			energy:  minTrack.Energy,
 		})
 	}
 
@@ -300,15 +303,15 @@ func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood model
 
 	feelNothing := false
 
-	steps := make(map[models.Mood][]*entry)
+	valSteps := make(map[models.Mood][]*entry)
 	for _, entry := range entries {
-		steps[models.ValenceMoodCategory(transformValence(entry.valence))] =
-			append(steps[models.ValenceMoodCategory(transformValence(entry.valence))], entry)
+		valSteps[models.ValenceMoodCategory(transformValence(entry.valence))] =
+			append(valSteps[models.ValenceMoodCategory(transformValence(entry.valence))], entry)
 	}
 
-	for mood := range steps {
-		rand.Shuffle(len(steps[mood]), func(i, j int) {
-			steps[mood][i], steps[mood][j] = steps[mood][j], steps[mood][i]
+	for mood := range valSteps {
+		rand.Shuffle(len(valSteps[mood]), func(i, j int) {
+			valSteps[mood][i], valSteps[mood][j] = valSteps[mood][j], valSteps[mood][i]
 		})
 	}
 
@@ -325,7 +328,7 @@ func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood model
 
 		moodCategory := models.ValenceMoodCategory(float32(mood)).Opposite()
 
-		for !feelNothing && len(steps[moodCategory]) <= 0 && !feelNothingYet(moodCategory) {
+		for !feelNothing && len(valSteps[moodCategory]) <= 0 && !feelNothingYet(moodCategory) {
 			if mood >= models.MoodNothing {
 				moodCategory += 0.125
 			} else {
@@ -333,14 +336,14 @@ func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood model
 			}
 		}
 
-		if moodCategory == models.MoodNothing && len(steps[moodCategory]) <= 0 {
+		if moodCategory == models.MoodNothing && len(valSteps[moodCategory]) <= 0 {
 			break
 		}
 
-		entry := steps[moodCategory][0]
+		entry := valSteps[moodCategory][0]
 
 		nextMood := mood + (models.Mood(transformValence(entry.valence)) / 4)
-		steps[moodCategory] = append(steps[moodCategory][:0], steps[moodCategory][0+1:]...)
+		valSteps[moodCategory] = append(valSteps[moodCategory][:0], valSteps[moodCategory][0+1:]...)
 
 		if feelNothing && !feelNothingYet(nextMood) {
 			continue
@@ -453,7 +456,7 @@ func UnremoveTrackFromUser(userId string, trackId string) error {
 	if err != nil {
 		return ErrNotFound
 	}
-	userTracks.TrackIds[trackId] = track.Valence
+	userTracks.TrackIds[trackId] = models.MinTrack{Valence: track.Valence, Energy: track.Energy}
 
 	db.Db.SetUserTracks(userId, userTracks)
 

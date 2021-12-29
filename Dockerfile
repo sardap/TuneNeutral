@@ -10,7 +10,7 @@ COPY ./frontend .
 
 RUN npm run build
 
-FROM golang:1.17.5 as backend_builder
+FROM golang:1.18beta1 as backend_builder
 
 WORKDIR /app
 

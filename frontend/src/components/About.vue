@@ -16,12 +16,13 @@
         account.
       </p>
     </div>
-    <h3><b>This site is NOT associated or endorsed by Spotify</b></h3>
+    <h3><b>This site is NOT associated or endorsed by Spotify</b></h3><br/>
     <div>
       <h3>Links</h3>
       <ul>
-        <li><a href="https://github.com/sardap/TuneNeutral">Source Code</a></li>
-        <li><a href="https://sarda.dev">Paul Sarda Portfolio site</a></li>
+        <li><a href="https://github.com/sardap/TuneNeutral">Source Code</a></li><br/>
+        <li><a href="https://sarda.dev">Paul Sarda Portfolio site</a></li><br/>
+        <li><a href="paul@sarda.dev">paul@sarda.dev</a></li><br/>
       </ul>
     </div>
   </div>
@@ -56,9 +57,9 @@ a {
   color: #42b983;
 }
 #root div {
-  width: 200px;
-  display: inline-block;
-  max-width: 80%;
+  width: 500px;
+  margin: auto;
+  max-width: 60%;
 }
 #root {
   margin-top: 30px;

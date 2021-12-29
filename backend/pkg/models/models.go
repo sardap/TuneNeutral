@@ -35,7 +35,7 @@ func (m Mood) Opposite() Mood {
 		return MoodSuicidal
 	}
 
-	panic("fuck")
+	panic("Not Implemented")
 }
 
 func ValenceMoodCategory(valence float32) Mood {
@@ -45,34 +45,85 @@ func ValenceMoodCategory(valence float32) Mood {
 		MoodGood, MoodHappy,
 	}
 
-	bestDist := math.MaxFloat32
-	closestMood := MoodSuicidal
+	return GetCategory(valence, moods)
+}
 
-	for _, mood := range moods {
-		dist := math.Abs(float64(valence - float32(mood)))
+type Energy float32
+
+const (
+	EnergySuicidal Energy = -0.25
+	EnergySad      Energy = -0.125
+	EnergyNothing  Energy = 0.00
+	EnergyGood     Energy = 0.125
+	EnergyHappy    Energy = 0.25
+)
+
+func (m Energy) Opposite() Energy {
+	switch m {
+	case EnergySuicidal:
+		return EnergyHappy
+	case EnergySad:
+		return EnergyGood
+	case EnergyNothing:
+		return EnergyNothing
+	case EnergyGood:
+		return EnergySad
+	case EnergyHappy:
+		return EnergySuicidal
+	}
+
+	panic("Not Implemented")
+}
+
+func EnergyMoodCategory(energy float32) Energy {
+	energies := []Energy{
+		EnergySuicidal, EnergySad,
+		EnergyNothing,
+		EnergyGood, EnergyHappy,
+	}
+
+	return GetCategory(energy, energies)
+}
+
+type Category interface {
+	Energy | Mood
+}
+
+func GetCategory[T Category](val float32, values []T) T {
+	bestDist := math.MaxFloat32
+	closestVal := values[0]
+
+	for _, other := range values {
+		dist := math.Abs(float64(val - float32(other)))
 		if dist < bestDist {
 			bestDist = dist
-			closestMood = mood
+			closestVal = other
 		}
 	}
 
-	return closestMood
+	return closestVal
 }
 
 type Track struct {
 	Id               string
 	Name             string
 	Valence          float32
+	Energy           float32
 	AvailableMarkets map[string]error
 	AlbumId          string
 	AlbumArtUrl      string
 	Artists          []spotify.SimpleArtist
 }
 
+type MinTrack struct {
+	Valence float32
+	Energy  float32
+}
+
 type UserTracks struct {
 	UserId           string
 	LastOffset       int
-	TrackIds         map[string]float32
+	TrackIds         map[string]MinTrack
 	IgnoredTracks    map[string]interface{}
 	CompletedScan    bool
 	LastTrackScanned *string
