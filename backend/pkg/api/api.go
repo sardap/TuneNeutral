@@ -315,8 +315,8 @@ func UpdatePlaylist(db *db.Database, userId string, client *spotify.Client, date
 	return nil
 }
 
-func RemoveTrackFromUser(db *db.Database, userId string, trackId string) error {
-	userTracks, err := db.GetUserTracks(userId)
+func RemoveTrackFromUser(dbConn *db.Database, userId string, trackId string) error {
+	userTracks, err := dbConn.GetUserTracks(userId)
 	if err != nil {
 		return ErrNotFound
 	}
@@ -325,15 +325,20 @@ func RemoveTrackFromUser(db *db.Database, userId string, trackId string) error {
 		userTracks.IgnoredTracks = map[string]interface{}{}
 	}
 	userTracks.IgnoredTracks[trackId] = nil
+
+	_, ok := userTracks.TrackIds[trackId]
+	if !ok {
+		return ErrNotFound
+	}
 	delete(userTracks.TrackIds, trackId)
 
-	db.SetUserTracks(userId, userTracks)
+	dbConn.SetUserTracks(userId, userTracks)
 
 	return nil
 }
 
-func UnremoveTrackFromUser(db *db.Database, userId string, trackId string) error {
-	userTracks, err := db.GetUserTracks(userId)
+func UnremoveTrackFromUser(dbConn *db.Database, userId string, trackId string) error {
+	userTracks, err := dbConn.GetUserTracks(userId)
 	if err != nil {
 		return ErrNotFound
 	}
@@ -347,19 +352,19 @@ func UnremoveTrackFromUser(db *db.Database, userId string, trackId string) error
 	}
 	delete(userTracks.IgnoredTracks, trackId)
 
-	track, err := db.GetTrack(trackId)
+	track, err := dbConn.GetTrack(trackId)
 	if err != nil {
 		return ErrNotFound
 	}
 	userTracks.TrackIds[trackId] = models.MinTrack{Valence: track.Valence, Energy: track.Energy}
 
-	db.SetUserTracks(userId, userTracks)
+	dbConn.SetUserTracks(userId, userTracks)
 
 	return nil
 }
 
-func GetRemovedTracksForUser(db *db.Database, userId string) ([]string, error) {
-	userTracks, err := db.GetUserTracks(userId)
+func GetRemovedTracksForUser(dbConn *db.Database, userId string) ([]string, error) {
+	userTracks, err := dbConn.GetUserTracks(userId)
 	if err != nil {
 		return nil, ErrNotFound
 	}
@@ -373,10 +378,10 @@ func GetRemovedTracksForUser(db *db.Database, userId string) ([]string, error) {
 	return trackIds, nil
 }
 
-func ClearUserData(db *db.Database, userId string) error {
-	db.ClearUserTracks(userId)
-	db.ClearMoodPlaylists(userId)
-	db.ClearUserFetchLock(userId)
+func ClearUserData(dbConn *db.Database, userId string) error {
+	dbConn.ClearUserTracks(userId)
+	dbConn.ClearMoodPlaylists(userId)
+	dbConn.ClearUserFetchLock(userId)
 
 	return nil
 }
