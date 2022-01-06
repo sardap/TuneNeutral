@@ -2,6 +2,7 @@ package router
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 	"github.com/gin-gonic/gin"
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/zmb3/spotify"
+	"golang.org/x/oauth2"
 
 	"github.com/gin-contrib/static"
 	"github.com/sardap/TuneNeutral/backend/pkg/api"
@@ -26,9 +28,84 @@ import (
 	"github.com/sardap/TuneNeutral/backend/pkg/models"
 )
 
+const (
+	spotifyAuthKey = "spotify_auth"
+	databaseKey    = "database"
+)
+
 var (
 	errNotAuth = fmt.Errorf("not auth")
 )
+
+func getDatabase(c *gin.Context) *db.Database {
+	inter, _ := c.Get(databaseKey)
+	return inter.(*db.Database)
+}
+
+func getAuth(c *gin.Context) *spotify.Authenticator {
+	auth, _ := c.Get(spotifyAuthKey)
+	return auth.(*spotify.Authenticator)
+}
+
+func decodeToken(encodedToken []byte) *oauth2.Token {
+	token, _ := base64.StdEncoding.DecodeString(string(encodedToken))
+
+	var result oauth2.Token
+	json.Unmarshal(token, &result)
+
+	return &result
+}
+
+func GetClientFromToken(auth *spotify.Authenticator, token []byte) (spotify.Client, error) {
+	return auth.NewClient(decodeToken(token)), nil
+}
+
+func encodeToken(a *oauth2.Token) []byte {
+	jsonfied, _ := json.Marshal(*a)
+
+	return []byte(base64.StdEncoding.EncodeToString(jsonfied))
+}
+
+// the user will eventually be redirected back to your redirect URL
+// typically you'll have a handler set up like the following:
+func redirectEndpoint(c *gin.Context) {
+	defer time.Sleep(time.Until(time.Now().Add(1 * time.Second)))
+
+	db := getDatabase(c)
+	// use the same userId string here that you used to generate the URL
+	key, err := db.GetAuthState(c.Request.URL.Query().Get("state"))
+	if err != nil {
+		c.JSON(400, gin.H{
+			"message": "invlaid",
+		})
+		return
+	}
+
+	session := sessions.Default(c)
+
+	if session.Get(api.StateKey).(string) != key {
+		c.JSON(400, gin.H{
+			"message": "invlaid",
+		})
+		return
+	}
+
+	code := c.Request.URL.Query().Get("code")
+
+	auth := getAuth(c)
+	token, err := auth.Exchange(code)
+	if err != nil {
+		http.Error(c.Writer, "Couldn't get token", http.StatusNotFound)
+		return
+	}
+
+	session.Set(api.TokenKey, encodeToken(token))
+	if err := session.Save(); err != nil {
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, "/")
+}
 
 func processApiError(c *gin.Context, err error) {
 	if errors.Is(err, api.ErrNotFound) {
@@ -48,7 +125,20 @@ func authEndpoint(c *gin.Context) {
 		return
 	}
 
-	api.AuthStart(c)
+	db := getDatabase(c)
+	state, key, err := db.GenerateAuthState()
+	if err != nil {
+		return
+	}
+
+	session := sessions.Default(c)
+	session.Set(api.StateKey, key)
+	if err := session.Save(); err != nil {
+		return
+	}
+
+	auth := getAuth(c)
+	c.Redirect(http.StatusTemporaryRedirect, auth.AuthURL(state))
 }
 
 func logoutEndpoint(c *gin.Context) {
@@ -73,7 +163,8 @@ func getUser(c *gin.Context) (string, *spotify.Client, error) {
 		return "", nil, err
 	}
 
-	client, err := api.GetClientFromToken([]byte(token))
+	auth := getAuth(c)
+	client, err := GetClientFromToken(auth, []byte(token))
 	if err != nil {
 		return "", nil, err
 	}
@@ -132,7 +223,8 @@ type getPlaylistsResponse struct {
 func getMoodPlaylistsEndpoint(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	playlists, err := api.GetPlaylists(userId)
+	db := getDatabase(c)
+	playlists, err := api.GetPlaylists(db, userId)
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -180,7 +272,8 @@ type getPlaylistResponse struct {
 func getMoodPlaylistEndpoint(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	playlist, err := api.GetPlaylist(userId, c.Param("date"))
+	db := getDatabase(c)
+	playlist, err := api.GetPlaylist(db, userId, c.Param("date"))
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -191,7 +284,7 @@ func getMoodPlaylistEndpoint(c *gin.Context) {
 		Note:      playlist.Note,
 	}
 	for _, track := range playlist.Tracks {
-		track, err := db.Db.GetTrack(track)
+		track, err := db.GetTrack(track)
 		if err != nil {
 			continue
 		}
@@ -232,7 +325,8 @@ type getRemovedTracksResponse struct {
 func getRemovedTracksEndpoint(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	tracks, err := api.GetRemovedTracksForUser(userId)
+	db := getDatabase(c)
+	tracks, err := api.GetRemovedTracksForUser(db, userId)
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -240,7 +334,7 @@ func getRemovedTracksEndpoint(c *gin.Context) {
 
 	response := getRemovedTracksResponse{}
 	for _, track := range tracks {
-		track, err := db.Db.GetTrack(track)
+		track, err := db.GetTrack(track)
 		if err != nil {
 			continue
 		}
@@ -281,7 +375,9 @@ type getSpotifyPlaylist struct {
 func getSpotifyPlaylistEndpoint(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	playlistId, _ := db.Db.GetSpotifyPlaylist(userId)
+	db := getDatabase(c)
+
+	playlistId, _ := db.GetSpotifyPlaylist(userId)
 
 	response := getSpotifyPlaylist{
 		Id: playlistId,
@@ -301,13 +397,15 @@ type getAllDataResponse struct {
 func getAllData(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	userTracks, _ := db.Db.GetUserTracks(userId)
-	moodPlaylist, _ := db.Db.GetMoodPlaylists(userId)
+	db := getDatabase(c)
+
+	userTracks, _ := db.GetUserTracks(userId)
+	moodPlaylist, _ := db.GetMoodPlaylists(userId)
 
 	response := getAllDataResponse{
 		UserTracks:    userTracks,
 		MoodPlaylists: moodPlaylist,
-		FetchLocked:   db.Db.UserFetchLocked(userId),
+		FetchLocked:   db.UserFetchLocked(userId),
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -343,7 +441,8 @@ func generateMoodPlaylistEndpoint(c *gin.Context) {
 
 	userId, client, _ := getUser(c)
 
-	_, err = api.GenerateMoodPlaylist(userId, client, models.Mood(request.Mood), date, request.Note)
+	db := getDatabase(c)
+	_, err = api.GenerateMoodPlaylist(db, userId, client, models.Mood(request.Mood), date, request.Note)
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -357,7 +456,8 @@ func generateMoodPlaylistEndpoint(c *gin.Context) {
 func updateTunePlaylistEndpoint(c *gin.Context) {
 	userId, client, _ := getUser(c)
 
-	err := api.UpdatePlaylist(userId, client, c.Param("playlist_id"))
+	db := getDatabase(c)
+	err := api.UpdatePlaylist(db, userId, client, c.Param("playlist_id"))
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -371,7 +471,8 @@ func updateTunePlaylistEndpoint(c *gin.Context) {
 func removeTrackEndpoint(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	err := api.RemoveTrackFromUser(userId, c.Param("track_id"))
+	db := getDatabase(c)
+	err := api.RemoveTrackFromUser(db, userId, c.Param("track_id"))
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -385,7 +486,8 @@ func removeTrackEndpoint(c *gin.Context) {
 func unremoveTrackEndpoint(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	err := api.UnremoveTrackFromUser(userId, c.Param("track_id"))
+	db := getDatabase(c)
+	err := api.UnremoveTrackFromUser(db, userId, c.Param("track_id"))
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -399,7 +501,8 @@ func unremoveTrackEndpoint(c *gin.Context) {
 func removeAllUserData(c *gin.Context) {
 	userId, _, _ := getUser(c)
 
-	api.ClearUserData(userId)
+	db := getDatabase(c)
+	api.ClearUserData(db, userId)
 	api.Logout(sessions.Default(c))
 
 	c.JSON(http.StatusOK, gin.H{
@@ -408,7 +511,9 @@ func removeAllUserData(c *gin.Context) {
 }
 
 func blockBadIps(c *gin.Context) {
-	if db.Db.IsIpGood(c.ClientIP()) {
+	db := getDatabase(c)
+
+	if db.IsIpGood(c.ClientIP()) {
 		c.Next()
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{})
@@ -429,27 +534,53 @@ func getIps() []string {
 	return strings.Split(buf.String(), "\n")
 }
 
-func badIpPuller() {
+// TODO do this by a firewall rule
+func badIpPuller(db *db.Database) {
 	for {
 		ips := getIps()
 		for _, ip := range ips {
-			db.Db.SetBadIp(ip, time.Hour*24+time.Minute*30)
+			db.SetBadIp(ip, time.Hour*24+time.Minute*30)
 		}
 
 		time.Sleep(time.Hour * 24)
 	}
 }
 
-func CreateRouter(cfg *config.Config) *gin.Engine {
-	go badIpPuller()
+func CreateRouter(cfg *config.Config, db *db.Database) *gin.Engine {
+	go badIpPuller(db)
 
 	r := gin.Default()
+
+	auth := spotify.NewAuthenticator(
+		fmt.Sprintf("%s://%s/callback", cfg.Scheme, cfg.Domain),
+		spotify.ScopePlaylistReadPrivate,
+		spotify.ScopePlaylistReadCollaborative,
+		spotify.ScopeUserLibraryRead,
+		spotify.ScopeUserReadPrivate,
+		spotify.ScopeUserReadPlaybackState,
+		spotify.ScopeUserModifyPlaybackState,
+		spotify.ScopeUserTopRead,
+		spotify.ScopeStreaming,
+		spotify.ScopePlaylistModifyPublic,
+	)
+
+	auth.SetAuthInfo(
+		cfg.ClientId,
+		cfg.ClientSecret,
+	)
+
+	// Add spotify auth binding
+	r.Use(func(c *gin.Context) {
+		c.Set(spotifyAuthKey, &auth)
+		c.Set(databaseKey, db)
+		c.Next()
+	})
 
 	store := cookie.NewStore([]byte(cfg.CookieAuthSecert), []byte(cfg.CookieEyncSecert))
 	r.Use(sessions.Sessions("tune", store))
 	r.Use(blockBadIps)
 
-	r.GET("/callback", api.RedirectEndpoint)
+	r.GET("/callback", redirectEndpoint)
 	r.GET("/auth", authEndpoint)
 	r.GET("/logout", logoutEndpoint)
 

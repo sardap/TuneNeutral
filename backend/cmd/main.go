@@ -7,7 +7,6 @@ import (
 
 	"github.com/namsral/flag"
 
-	"github.com/sardap/TuneNeutral/backend/pkg/api"
 	"github.com/sardap/TuneNeutral/backend/pkg/config"
 	"github.com/sardap/TuneNeutral/backend/pkg/db"
 	"github.com/sardap/TuneNeutral/backend/pkg/router"
@@ -33,8 +32,7 @@ func main() {
 		return
 	}
 
-	db.ConnectDb(cfg)
-	defer db.Db.Close()
-	api.InitApi(cfg)
-	router.CreateRouter(cfg).Run(":8080")
+	dbConn := db.ConnectDb(cfg)
+	defer dbConn.Close()
+	router.CreateRouter(cfg, dbConn).Run(":8080")
 }

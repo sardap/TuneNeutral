@@ -1,128 +1,23 @@
 package api
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"sort"
 	"time"
 
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
 
 	"github.com/dgraph-io/badger/v3"
-	"github.com/sardap/TuneNeutral/backend/pkg/config"
 	"github.com/sardap/TuneNeutral/backend/pkg/db"
 	"github.com/sardap/TuneNeutral/backend/pkg/models"
 	"github.com/zmb3/spotify"
-	"golang.org/x/oauth2"
 )
 
 var (
 	ErrServerError = fmt.Errorf("internal server error")
 	ErrNotFound    = fmt.Errorf("not found")
 )
-
-var (
-	auth spotify.Authenticator
-)
-
-func InitApi(cfg *config.Config) {
-	auth = spotify.NewAuthenticator(
-		fmt.Sprintf("%s://%s/callback", cfg.Scheme, cfg.Domain),
-		spotify.ScopePlaylistReadPrivate,
-		spotify.ScopePlaylistReadCollaborative,
-		spotify.ScopeUserLibraryRead,
-		spotify.ScopeUserReadPrivate,
-		spotify.ScopeUserReadPlaybackState,
-		spotify.ScopeUserModifyPlaybackState,
-		spotify.ScopeUserTopRead,
-		spotify.ScopeStreaming,
-		spotify.ScopePlaylistModifyPublic,
-	)
-
-	auth.SetAuthInfo(
-		cfg.ClientId,
-		cfg.ClientSecret,
-	)
-}
-
-func decodeToken(encodedToken []byte) *oauth2.Token {
-	token, _ := base64.StdEncoding.DecodeString(string(encodedToken))
-
-	var result oauth2.Token
-	json.Unmarshal(token, &result)
-
-	return &result
-}
-
-func GetClientFromToken(token []byte) (spotify.Client, error) {
-	return auth.NewClient(decodeToken(token)), nil
-}
-
-func encodeToken(a *oauth2.Token) []byte {
-	jsonfied, _ := json.Marshal(*a)
-
-	return []byte(base64.StdEncoding.EncodeToString(jsonfied))
-}
-
-// the user will eventually be redirected back to your redirect URL
-// typically you'll have a handler set up like the following:
-func RedirectEndpoint(c *gin.Context) {
-	defer time.Sleep(time.Until(time.Now().Add(1 * time.Second)))
-
-	// use the same userId string here that you used to generate the URL
-	key, err := db.Db.GetAuthState(c.Request.URL.Query().Get("state"))
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": "invlaid",
-		})
-		return
-	}
-
-	session := sessions.Default(c)
-
-	if session.Get(StateKey).(string) != key {
-		c.JSON(400, gin.H{
-			"message": "invlaid",
-		})
-		return
-	}
-
-	code := c.Request.URL.Query().Get("code")
-	token, err := auth.Exchange(code)
-	if err != nil {
-		http.Error(c.Writer, "Couldn't get token", http.StatusNotFound)
-		return
-	}
-
-	session.Set(TokenKey, encodeToken(token))
-	if err := session.Save(); err != nil {
-		return
-	}
-
-	c.Redirect(http.StatusTemporaryRedirect, "/")
-}
-
-func AuthStart(c *gin.Context) error {
-
-	state, key, err := db.Db.GenerateAuthState()
-	if err != nil {
-		return ErrServerError
-	}
-
-	session := sessions.Default(c)
-	session.Set(StateKey, key)
-	if err := session.Save(); err != nil {
-		return err
-	}
-
-	c.Redirect(http.StatusTemporaryRedirect, auth.AuthURL(state))
-
-	return nil
-}
 
 const (
 	Userkey  = "user"
@@ -138,8 +33,8 @@ func Logout(session sessions.Session) error {
 	return nil
 }
 
-func GetPlaylists(userId string) ([]*models.MoodPlaylist, error) {
-	playlists, err := db.Db.GetMoodPlaylists(userId)
+func GetPlaylists(db *db.Database, userId string) ([]*models.MoodPlaylist, error) {
+	playlists, err := db.GetMoodPlaylists(userId)
 	if err != nil {
 		return nil, ErrServerError
 	}
@@ -147,8 +42,8 @@ func GetPlaylists(userId string) ([]*models.MoodPlaylist, error) {
 	return playlists, nil
 }
 
-func GetPlaylist(userId string, date string) (*models.MoodPlaylist, error) {
-	playlist, err := db.Db.GetMoodPlaylist(userId, date)
+func GetPlaylist(db *db.Database, userId string, date string) (*models.MoodPlaylist, error) {
+	playlist, err := db.GetMoodPlaylist(userId, date)
 	if err != nil {
 		if err == badger.ErrKeyNotFound {
 			return nil, ErrNotFound
@@ -163,12 +58,12 @@ func transformValence(valence float32) float32 {
 	return valence - 0.5
 }
 
-func fetchNextUserTracks(userId string, client *spotify.Client) error {
-	if db.Db.UserFetchLocked(userId) {
+func fetchNextUserTracks(db *db.Database, userId string, client *spotify.Client) error {
+	if db.UserFetchLocked(userId) {
 		return nil
 	}
 
-	userTracks, err := db.Db.GetUserTracks(userId)
+	userTracks, err := db.GetUserTracks(userId)
 	if err == badger.ErrKeyNotFound {
 		userTracks = &models.UserTracks{
 			UserId:   userId,
@@ -232,7 +127,7 @@ func fetchNextUserTracks(userId string, client *spotify.Client) error {
 			modelTrack.AlbumArtUrl = track.Album.Images[0].URL
 		}
 
-		db.Db.PutTrack(&modelTrack)
+		db.PutTrack(&modelTrack)
 
 		userTracks.TrackIds[modelTrack.Id] = models.MinTrack{Valence: modelTrack.Valence, Energy: modelTrack.Energy}
 	}
@@ -244,13 +139,13 @@ func fetchNextUserTracks(userId string, client *spotify.Client) error {
 		userTracks.LastTrackScanned = &lastTrack
 	}
 
-	db.Db.SetUserTracks(userId, userTracks)
+	db.SetUserTracks(userId, userTracks)
 
 	if !userTracks.CompletedScan && len(userTracks.TrackIds) < 1000 {
-		return fetchNextUserTracks(userId, client)
+		return fetchNextUserTracks(db, userId, client)
 	}
 
-	db.Db.SetUserFetchLock(userId)
+	db.SetUserFetchLock(userId)
 
 	return nil
 }
@@ -259,16 +154,16 @@ func feelNothingYet(mood models.Mood) bool {
 	return mood > models.MoodNothing-models.Mood(0.05) && mood < models.MoodNothing+models.Mood(0.05)
 }
 
-func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood models.Mood, date time.Time, note string) (*models.MoodPlaylist, error) {
-	if err := fetchNextUserTracks(userId, client); err != nil {
+func GenerateMoodPlaylist(db *db.Database, userId string, client *spotify.Client, startMood models.Mood, date time.Time, note string) (*models.MoodPlaylist, error) {
+	if err := fetchNextUserTracks(db, userId, client); err != nil {
 		return nil, err
 	}
 
-	userTracks, _ := db.Db.GetUserTracks(userId)
+	userTracks, _ := db.GetUserTracks(userId)
 
 	ignoreTracks := make(map[string]interface{})
 	{
-		playlists, _ := db.Db.GetMoodPlaylitsBetweenDates(userId, date.Add(-(24 * 7 * time.Hour)), date)
+		playlists, _ := db.GetMoodPlaylitsBetweenDates(userId, date.Add(-(24 * 7 * time.Hour)), date)
 
 		for _, playlist := range playlists {
 			for _, track := range playlist.Tracks {
@@ -367,18 +262,18 @@ func GenerateMoodPlaylist(userId string, client *spotify.Client, startMood model
 
 	result.EndMood = float32(models.ValenceMoodCategory(float32(mood)))
 
-	db.Db.SetMoodPlaylist(userId, result)
+	db.SetMoodPlaylist(userId, result)
 
 	return result, nil
 }
 
-func UpdatePlaylist(userId string, client *spotify.Client, date string) error {
-	playlist, err := db.Db.GetMoodPlaylist(userId, date)
+func UpdatePlaylist(db *db.Database, userId string, client *spotify.Client, date string) error {
+	playlist, err := db.GetMoodPlaylist(userId, date)
 	if err != nil {
 		return ErrNotFound
 	}
 
-	playlistId, err := db.Db.GetSpotifyPlaylist(userId)
+	playlistId, err := db.GetSpotifyPlaylist(userId)
 	if err != nil {
 		if err == badger.ErrKeyNotFound {
 			resp, err := client.CreatePlaylistForUser(userId, "tune neutral", "Playlist for tune neutral", true)
@@ -386,7 +281,7 @@ func UpdatePlaylist(userId string, client *spotify.Client, date string) error {
 				return ErrServerError
 			}
 			playlistId = string(resp.ID)
-			db.Db.SetSpotifyPlaylist(userId, playlistId)
+			db.SetSpotifyPlaylist(userId, playlistId)
 		} else {
 			return ErrNotFound
 		}
@@ -420,8 +315,8 @@ func UpdatePlaylist(userId string, client *spotify.Client, date string) error {
 	return nil
 }
 
-func RemoveTrackFromUser(userId string, trackId string) error {
-	userTracks, err := db.Db.GetUserTracks(userId)
+func RemoveTrackFromUser(db *db.Database, userId string, trackId string) error {
+	userTracks, err := db.GetUserTracks(userId)
 	if err != nil {
 		return ErrNotFound
 	}
@@ -432,13 +327,13 @@ func RemoveTrackFromUser(userId string, trackId string) error {
 	userTracks.IgnoredTracks[trackId] = nil
 	delete(userTracks.TrackIds, trackId)
 
-	db.Db.SetUserTracks(userId, userTracks)
+	db.SetUserTracks(userId, userTracks)
 
 	return nil
 }
 
-func UnremoveTrackFromUser(userId string, trackId string) error {
-	userTracks, err := db.Db.GetUserTracks(userId)
+func UnremoveTrackFromUser(db *db.Database, userId string, trackId string) error {
+	userTracks, err := db.GetUserTracks(userId)
 	if err != nil {
 		return ErrNotFound
 	}
@@ -452,19 +347,19 @@ func UnremoveTrackFromUser(userId string, trackId string) error {
 	}
 	delete(userTracks.IgnoredTracks, trackId)
 
-	track, err := db.Db.GetTrack(trackId)
+	track, err := db.GetTrack(trackId)
 	if err != nil {
 		return ErrNotFound
 	}
 	userTracks.TrackIds[trackId] = models.MinTrack{Valence: track.Valence, Energy: track.Energy}
 
-	db.Db.SetUserTracks(userId, userTracks)
+	db.SetUserTracks(userId, userTracks)
 
 	return nil
 }
 
-func GetRemovedTracksForUser(userId string) ([]string, error) {
-	userTracks, err := db.Db.GetUserTracks(userId)
+func GetRemovedTracksForUser(db *db.Database, userId string) ([]string, error) {
+	userTracks, err := db.GetUserTracks(userId)
 	if err != nil {
 		return nil, ErrNotFound
 	}
@@ -478,10 +373,10 @@ func GetRemovedTracksForUser(userId string) ([]string, error) {
 	return trackIds, nil
 }
 
-func ClearUserData(userId string) error {
-	db.Db.ClearUserTracks(userId)
-	db.Db.ClearMoodPlaylists(userId)
-	db.Db.ClearUserFetchLock(userId)
+func ClearUserData(db *db.Database, userId string) error {
+	db.ClearUserTracks(userId)
+	db.ClearMoodPlaylists(userId)
+	db.ClearUserFetchLock(userId)
 
 	return nil
 }
