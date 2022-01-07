@@ -15,7 +15,7 @@
     "vue-class-component": "^8.0.0-0",
     "vue-fixed-header": "^3.2.15",
     "vue-grid-responsive": "^1.2.1",
-    "vue-loading-overlay": "^5.0.1",
+    "vue-loading-overlay": "^5.0.3",
     "vue-router": "^4.0.0-0",
     "vue-slider-component": "^4.0.0-beta.5",
     "vue3-burger-menu": "^1.1.1"
