@@ -7,6 +7,3 @@ Tune Neutral will create an mood playlist to get you back to feeling nothing. By
 
 ## Why?
 The goal isn't happiness it's feeling numb. That's what the goal of this app is too happy here is wake me up when september ends.
-
-## Issues or ideas
-Raise an issue.

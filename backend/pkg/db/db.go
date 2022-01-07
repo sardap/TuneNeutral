@@ -14,10 +14,6 @@ import (
 	"github.com/sardap/TuneNeutral/backend/pkg/models"
 )
 
-var (
-	Db *Database
-)
-
 type Database struct {
 	db *badger.DB
 }
@@ -338,14 +334,14 @@ func (d *Database) IsIpGood(ip string) (result bool) {
 	return
 }
 
-func ConnectDb(cfg *config.Config) {
-	Db = &Database{}
-
+func ConnectDb(cfg *config.Config) *Database {
 	// Open the Badger database located in the /tmp/badger directory.
 	// It will be created if it doesn't exist.
 	db, err := badger.Open(badger.DefaultOptions(cfg.DatabasePath))
 	if err != nil {
 		log.Fatal(err)
 	}
-	Db.db = db
+	return &Database{
+		db: db,
+	}
 }

@@ -14,16 +14,16 @@ const (
 type Mood float32
 
 const (
-	MoodSuicidal Mood = -0.25
-	MoodSad      Mood = -0.125
-	MoodNothing  Mood = 0.00
-	MoodGood     Mood = 0.125
-	MoodHappy    Mood = 0.25
+	MoodDepressed Mood = -0.25
+	MoodSad       Mood = -0.125
+	MoodNothing   Mood = 0.00
+	MoodGood      Mood = 0.125
+	MoodHappy     Mood = 0.25
 )
 
 func (m Mood) Opposite() Mood {
 	switch m {
-	case MoodSuicidal:
+	case MoodDepressed:
 		return MoodHappy
 	case MoodSad:
 		return MoodGood
@@ -32,7 +32,7 @@ func (m Mood) Opposite() Mood {
 	case MoodGood:
 		return MoodSad
 	case MoodHappy:
-		return MoodSuicidal
+		return MoodDepressed
 	}
 
 	panic("Not Implemented")
@@ -40,7 +40,7 @@ func (m Mood) Opposite() Mood {
 
 func ValenceMoodCategory(valence float32) Mood {
 	moods := []Mood{
-		MoodSuicidal, MoodSad,
+		MoodDepressed, MoodSad,
 		MoodNothing,
 		MoodGood, MoodHappy,
 	}
@@ -51,16 +51,16 @@ func ValenceMoodCategory(valence float32) Mood {
 type Energy float32
 
 const (
-	EnergySuicidal Energy = -0.25
-	EnergySad      Energy = -0.125
-	EnergyNothing  Energy = 0.00
-	EnergyGood     Energy = 0.125
-	EnergyHappy    Energy = 0.25
+	EnergyDepressed Energy = -0.25
+	EnergySad       Energy = -0.125
+	EnergyNothing   Energy = 0.00
+	EnergyGood      Energy = 0.125
+	EnergyHappy     Energy = 0.25
 )
 
 func (m Energy) Opposite() Energy {
 	switch m {
-	case EnergySuicidal:
+	case EnergyDepressed:
 		return EnergyHappy
 	case EnergySad:
 		return EnergyGood
@@ -69,7 +69,7 @@ func (m Energy) Opposite() Energy {
 	case EnergyGood:
 		return EnergySad
 	case EnergyHappy:
-		return EnergySuicidal
+		return EnergyDepressed
 	}
 
 	panic("Not Implemented")
@@ -77,7 +77,7 @@ func (m Energy) Opposite() Energy {
 
 func EnergyMoodCategory(energy float32) Energy {
 	energies := []Energy{
-		EnergySuicidal, EnergySad,
+		EnergyDepressed, EnergySad,
 		EnergyNothing,
 		EnergyGood, EnergyHappy,
 	}
