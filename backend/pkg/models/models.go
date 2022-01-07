@@ -130,6 +130,7 @@ type UserTracks struct {
 }
 
 type MoodPlaylist struct {
+	// This should have been a string :/
 	Date      time.Time
 	Tracks    []string
 	StartMood float32

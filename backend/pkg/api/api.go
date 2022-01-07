@@ -58,7 +58,16 @@ func transformValence(valence float32) float32 {
 	return valence - 0.5
 }
 
-func fetchNextUserTracks(db *db.Database, userId string, client *spotify.Client) error {
+type SpotifyClient interface {
+	CurrentUsersTracksOpt(*spotify.Options) (*spotify.SavedTrackPage, error)
+	GetAudioFeatures(ids ...spotify.ID) ([]*spotify.AudioFeatures, error)
+	CreatePlaylistForUser(userID, playlistName, description string, public bool) (*spotify.FullPlaylist, error)
+	GetPlaylistTracks(playlistID spotify.ID) (*spotify.PlaylistTrackPage, error)
+	RemoveTracksFromPlaylist(playlistID spotify.ID, trackIDs ...spotify.ID) (newSnapshotID string, err error)
+	AddTracksToPlaylist(playlistID spotify.ID, trackIDs ...spotify.ID) (snapshotID string, err error)
+}
+
+func fetchNextUserTracks(db *db.Database, userId string, client SpotifyClient) error {
 	if db.UserFetchLocked(userId) {
 		return nil
 	}
@@ -154,16 +163,19 @@ func feelNothingYet(mood models.Mood) bool {
 	return mood > models.MoodNothing-models.Mood(0.05) && mood < models.MoodNothing+models.Mood(0.05)
 }
 
-func GenerateMoodPlaylist(db *db.Database, userId string, client *spotify.Client, startMood models.Mood, date time.Time, note string) (*models.MoodPlaylist, error) {
-	if err := fetchNextUserTracks(db, userId, client); err != nil {
+func GenerateMoodPlaylist(
+	dbConn *db.Database, userId string, client SpotifyClient,
+	startMood models.Mood, date time.Time, note string,
+) (*models.MoodPlaylist, error) {
+	if err := fetchNextUserTracks(dbConn, userId, client); err != nil {
 		return nil, err
 	}
 
-	userTracks, _ := db.GetUserTracks(userId)
+	userTracks, _ := dbConn.GetUserTracks(userId)
 
 	ignoreTracks := make(map[string]interface{})
 	{
-		playlists, _ := db.GetMoodPlaylitsBetweenDates(userId, date.Add(-(24 * 7 * time.Hour)), date)
+		playlists, _ := dbConn.GetMoodPlaylitsBetweenDates(userId, date.Add(-(24 * 7 * time.Hour)), date)
 
 		for _, playlist := range playlists {
 			for _, track := range playlist.Tracks {
@@ -262,18 +274,18 @@ func GenerateMoodPlaylist(db *db.Database, userId string, client *spotify.Client
 
 	result.EndMood = float32(models.ValenceMoodCategory(float32(mood)))
 
-	db.SetMoodPlaylist(userId, result)
+	dbConn.SetMoodPlaylist(userId, result)
 
 	return result, nil
 }
 
-func UpdatePlaylist(db *db.Database, userId string, client *spotify.Client, date string) error {
-	playlist, err := db.GetMoodPlaylist(userId, date)
+func UpdateSpotifyPlaylist(dbConn *db.Database, client SpotifyClient, userId string, date string) error {
+	playlist, err := dbConn.GetMoodPlaylist(userId, date)
 	if err != nil {
 		return ErrNotFound
 	}
 
-	playlistId, err := db.GetSpotifyPlaylist(userId)
+	playlistId, err := dbConn.GetSpotifyPlaylist(userId)
 	if err != nil {
 		if err == badger.ErrKeyNotFound {
 			resp, err := client.CreatePlaylistForUser(userId, "tune neutral", "Playlist for tune neutral", true)
@@ -281,7 +293,7 @@ func UpdatePlaylist(db *db.Database, userId string, client *spotify.Client, date
 				return ErrServerError
 			}
 			playlistId = string(resp.ID)
-			db.SetSpotifyPlaylist(userId, playlistId)
+			dbConn.SetSpotifyPlaylist(userId, playlistId)
 		} else {
 			return ErrNotFound
 		}
@@ -382,6 +394,7 @@ func ClearUserData(dbConn *db.Database, userId string) error {
 	dbConn.ClearUserTracks(userId)
 	dbConn.ClearMoodPlaylists(userId)
 	dbConn.ClearUserFetchLock(userId)
+	dbConn.ClearSpotifyPlaylist(userId)
 
 	return nil
 }

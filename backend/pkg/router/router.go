@@ -453,11 +453,11 @@ func generateMoodPlaylistEndpoint(c *gin.Context) {
 	})
 }
 
-func updateTunePlaylistEndpoint(c *gin.Context) {
+func updateTuneSpotifyPlaylistEndpoint(c *gin.Context) {
 	userId, client, _ := getUser(c)
 
-	db := getDatabase(c)
-	err := api.UpdatePlaylist(db, userId, client, c.Param("playlist_id"))
+	dbConn := getDatabase(c)
+	err := api.UpdateSpotifyPlaylist(dbConn, client, userId, c.Param("playlist_id"))
 	if err != nil {
 		processApiError(c, err)
 		return
@@ -598,7 +598,7 @@ func CreateRouter(cfg *config.Config, db *db.Database) *gin.Engine {
 		v1Authenticated.GET("/spotify_playlist", getSpotifyPlaylistEndpoint)
 		v1Authenticated.GET("/all_data", getAllData)
 		v1Authenticated.POST("/generate_mood_playlist", generateMoodPlaylistEndpoint)
-		v1Authenticated.POST("/update_playlist/:playlist_id", updateTunePlaylistEndpoint)
+		v1Authenticated.POST("/update_playlist/:playlist_id", updateTuneSpotifyPlaylistEndpoint)
 		v1Authenticated.POST("/remove_track/:track_id", removeTrackEndpoint)
 		v1Authenticated.POST("/unremove_track/:track_id", unremoveTrackEndpoint)
 		v1Authenticated.DELETE("/remove_all_user_data", removeAllUserData)
