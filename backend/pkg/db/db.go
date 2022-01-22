@@ -271,6 +271,12 @@ func (d *Database) SetSpotifyPlaylist(userId, playlistId string) error {
 	})
 }
 
+func (d *Database) ClearSpotifyPlaylist(userId string) error {
+	return d.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete(keySpotifyPlaylist(userId))
+	})
+}
+
 func authStateKey(id string) []byte {
 	return []byte(fmt.Sprintf("auth/states/%s", id))
 }
