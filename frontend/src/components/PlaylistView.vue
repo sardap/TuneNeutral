@@ -6,7 +6,7 @@
       </column>
     </row>
     <div>
-      <button @click="copyShareText">Copy Playlist to Clipboard!</button>
+      <button class="button" @click="copyShareText">Copy Playlist to Clipboard!</button>
     </div>
     <div>
       <div v-if="note">
@@ -63,8 +63,8 @@ import AddToQueue from "@/components/AddToQueue.vue";
       let result = "";
       let today = new Date();
       result += `😭 Tune Neutral for ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()+1} 😃\n`;
-      for (let i = 0; i < this.props.tracks.length; i++) {
-        let track = this.props.tracks[i];
+      for (let i = 0; i < this.tracks.length; i++) {
+        let track = this.tracks[i];
         result += `${i+1}. ${track.name} https://open.spotify.com/track/${track.id}\n`;
       }
       result += "From https://tune.sarda.dev\n";
