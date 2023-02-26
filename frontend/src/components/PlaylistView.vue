@@ -6,6 +6,9 @@
       </column>
     </row>
     <div>
+      <button @click="copyShareText">Copy Playlist to Clipboard!</button>
+    </div>
+    <div>
       <div v-if="note">
         <h3>Note</h3>
         <p>{{ note }}</p>
@@ -56,6 +59,17 @@ import AddToQueue from "@/components/AddToQueue.vue";
         }
       }
     },
+    async copyShareText() {
+      let result = "";
+      let today = new Date();
+      result += `😭 Tune Neutral for ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()+1} 😃\n`;
+      for (let i = 0; i < this.props.tracks.length; i++) {
+        let track = this.props.tracks[i];
+        result += `${i+1}. ${track.name} https://open.spotify.com/track/${track.id}\n`;
+      }
+      result += "From https://tune.sarda.dev\n";
+      navigator.clipboard.writeText(result);
+    }
   },
   created() {
     this.getPlaylistId();
