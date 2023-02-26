@@ -62,7 +62,7 @@ import AddToQueue from "@/components/AddToQueue.vue";
     async copyShareText() {
       let result = "";
       let today = new Date();
-      result += `😭 Tune Neutral for ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()+1} 😃\n`;
+      result += `😭 Tune Neutral for ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()} 😃\n`;
       for (let i = 0; i < this.tracks.length; i++) {
         let track = this.tracks[i];
         result += `${i+1}. ${track.name} https://open.spotify.com/track/${track.id}\n`;
