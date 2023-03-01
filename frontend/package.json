@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.6",
-    "core-js": "^3.28.0",
+    "core-js": "^3.29.0",
     "v-calendar": "^3.0.0-alpha.8",
     "vue": "^3.2.47",
     "vue-class-component": "^8.0.0-0",
