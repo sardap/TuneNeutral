@@ -10,7 +10,7 @@
   "dependencies": {
     "@popperjs/core": "^2.11.6",
     "core-js": "^3.29.1",
-    "v-calendar": "^3.0.0-alpha.8",
+    "v-calendar": "^3.0.0",
     "vue": "^3.2.47",
     "vue-class-component": "^8.0.0-0",
     "vue-fixed-header": "^3.2.15",
